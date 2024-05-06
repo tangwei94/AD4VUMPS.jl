@@ -13,5 +13,6 @@ export MPSMPS_TransferMatrix, MPSMPOMPS_TransferMatrix
 export right_env, left_env
 
 include("transfer_matrix.jl");
+include("mpsmps_transfer_matrix_backward.jl")
 
 end
