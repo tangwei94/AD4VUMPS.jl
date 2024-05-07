@@ -17,6 +17,6 @@ export MPSMPSTransferMatrixBackward
 include("utils.jl")
 include("transfer_matrix.jl");
 include("mpsmps_transfer_matrix_backward.jl")
-#include("mpsmpomps_transfer_matrix_backward.jl")
+include("mpsmpomps_transfer_matrix_backward.jl")
 
 end
