@@ -12,7 +12,9 @@ using JLD2
 export MPSMPS_TransferMatrix, MPSMPOMPS_TransferMatrix
 export right_env, left_env
 
+include("utils.jl")
 include("transfer_matrix.jl");
 include("mpsmps_transfer_matrix_backward.jl")
+#include("mpsmpomps_transfer_matrix_backward.jl")
 
 end
