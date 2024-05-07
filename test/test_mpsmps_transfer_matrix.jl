@@ -1,0 +1,92 @@
+@testset "test backward for right_env" for ix in 1:10
+    sp1 = ℂ^12;
+    sp2 = ℂ^3;
+    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+    B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+
+    function _F1(X)
+        TM1 = MPSMPSTransferMatrix(X, X, false)
+        v1 = right_env(TM1)
+        return norm(tr(v1)) / norm(v1) 
+    end
+    function _F2(X)
+        TM1 = MPSMPSTransferMatrix(A, X, false)
+        v1 = right_env(TM1)
+        return norm(tr(v1)) / norm(v1) 
+    end
+    function _F3(X)
+        TM1 = MPSMPSTransferMatrix(X, A, false)
+        v1 = right_env(TM1)
+        return norm(tr(v1)) / norm(v1) 
+    end
+
+    test_ADgrad(_F1, A)
+    test_ADgrad(_F2, A)
+    test_ADgrad(_F3, A)
+    test_ADgrad(_F1, B)
+    test_ADgrad(_F2, B)
+    test_ADgrad(_F3, B)
+
+end
+
+@testset "test backward for left_env" for ix in 1:10
+    sp1 = ℂ^12;
+    sp2 = ℂ^3;
+    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+    B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+
+    function _F1(X)
+        TM1 = MPSMPSTransferMatrix(X, X, false)
+        v1 = left_env(TM1)
+        return norm(tr(v1)) / norm(v1) 
+    end
+    function _F2(X)
+        TM1 = MPSMPSTransferMatrix(A, X, false)
+        v1 = left_env(TM1)
+        return norm(tr(v1)) / norm(v1) 
+    end
+    function _F3(X)
+        TM1 = MPSMPSTransferMatrix(X, A, false)
+        v1 = left_env(TM1)
+        return norm(tr(v1)) / norm(v1) 
+    end
+
+    test_ADgrad(_F1, A)
+    test_ADgrad(_F2, A)
+    test_ADgrad(_F3, A)
+    test_ADgrad(_F1, B)
+    test_ADgrad(_F2, B)
+    test_ADgrad(_F3, B)
+
+end
+
+
+@testset "test backward for both left_env and right_env" for ix in 1:10
+    sp1 = ℂ^12;
+    sp2 = ℂ^3;
+    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+    B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+
+    function _F1(X)
+        TM1 = MPSMPSTransferMatrix(X, X, false)
+        TM2 = MPSMPSTransferMatrix(X, B, false)
+        vl1 = left_env(TM1)
+        vr2 = right_env(TM2)
+   
+        return norm(tr(vl1)) / norm(vl1) + norm(tr(vr2))/norm(vr2) + norm(tr(vl1 * vr2)) / norm(vl1) / norm(vr2)
+    end
+    function _F2(X)
+        TM1 = MPSMPSTransferMatrix(A, X, false)
+        TM2 = MPSMPSTransferMatrix(X, X, false)
+        vl1 = left_env(TM1)
+        vr2 = right_env(TM2)
+   
+        return norm(tr(vl1)) / norm(vl1) + norm(tr(vr2))/norm(vr2) + norm(tr(vl1 * vr2)) / norm(vl1) / norm(vr2)
+    end
+
+    test_ADgrad(_F1, A)
+    test_ADgrad(_F2, A)
+    test_ADgrad(_F1, B)
+    test_ADgrad(_F2, B)
+
+end

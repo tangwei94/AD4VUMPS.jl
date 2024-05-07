@@ -9,6 +9,7 @@ using ChainRules, ChainRulesCore, Zygote
 using OptimKit
 using JLD2
 
+export randomize!
 export MPSMPSTransferMatrix, MPSMPOMPSTransferMatrix
 export right_env, left_env
 export MPSMPSTransferMatrixBackward

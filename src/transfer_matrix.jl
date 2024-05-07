@@ -6,7 +6,7 @@ struct MPSMPSTransferMatrix{A<:MPSTensor,C<:MPSTensor} <:
     below::C
     isflipped::Bool
 end
-struct MPSMPOMPSTransferMatrix{A<:AbstractTensorMap,B<:AbstractTensorMap,C<:AbstractTensorMap} <:
+struct MPSMPOMPSTransferMatrix{A<:MPSTensor,B<:MPOTensor,C<:MPSTensor} <:
        AbstractTransferMatrix
     above::A
     middle::B

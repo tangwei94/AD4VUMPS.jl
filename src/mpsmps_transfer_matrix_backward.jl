@@ -30,7 +30,7 @@ function left_env_backward(TM::MPSMPSTransferMatrix, λ::Number, vl::RhoTensor, 
     ξl, info = linsolve(x -> TM(x) - λ*x, ∂vl', init') # ξl should live in the space of vr
     (info.converged == 0) && @warn "left_env_backward not converged: normres = $(info.normres)"
 
-    return ξl'
+    return ξl
 end
 
 function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPSTransferMatrix)
@@ -59,7 +59,7 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPSTransferMatrix)
    
     function left_env_pushback(∂vl)
         ξl = left_env_backward(TM, λl, vl, ∂vl)
-        return NoTangent(), TransferMatrixBackward([vl], [-ξl])
+        return NoTangent(), MPSMPSTransferMatrixBackward([vl], [-ξl])
     end
     return vl, left_env_pushback
 end
