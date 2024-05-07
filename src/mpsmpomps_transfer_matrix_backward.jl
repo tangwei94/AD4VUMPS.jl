@@ -1,19 +1,14 @@
-const RhoTensor  = AbstractTensorMap{S,1,1} where {S}
-const EnvTensorL = AbstractTensorMap{S,1,2} where {S}
-const EnvTensorR = AbstractTensorMap{S,2,1} where {S}
-const MPSTensor = AbstractTensorMap{S,2,1} where {S}
-
-struct MPSMPSTransferMatrixBackward
-    VLs::Vector{<:RhoTensor}
-    VRs::Vector{<:RhoTensor}
+struct MPSMPOMPSTransferMatrixBackward
+    VLs::Vector{<:EnvTensorL}
+    VRs::Vector{<:EnvTensorR}
 end
 
-Base.:+(bTM1::MPSMPSTransferMatrixBackward, bTM2::MPSMPSTransferMatrixBackward) = MPSMPSTransferMatrixBackward([bTM1.VLs; bTM2.VLs], [bTM1.VRs; bTM2.VRs])
-Base.:-(bTM1::MPSMPSTransferMatrixBackward, bTM2::MPSMPSTransferMatrixBackward) = MPSMPSTransferMatrixBackward([bTM1.VLs; bTM2.VLs], [bTM1.VRs; -1*bTM2.VRs])
-Base.:*(a::Number, bTM::MPSMPSTransferMatrixBackward) = MPSMPSTransferMatrixBackward(bTM.VLs, a * bTM.VRs)
-Base.:*(bTM::MPSMPSTransferMatrixBackward, a::Number) = MPSMPSTransferMatrixBackward(bTM.VLs, a * bTM.VRs)
+Base.:+(bTM1::MPSMPOMPSTransferMatrixBackward, bTM2::MPSMPOMPSTransferMatrixBackward) = MPSMPOMPSTransferMatrixBackward([bTM1.VLs; bTM2.VLs], [bTM1.VRs; bTM2.VRs])
+Base.:-(bTM1::MPSMPOMPSTransferMatrixBackward, bTM2::MPSMPOMPSTransferMatrixBackward) = MPSMPOMPSTransferMatrixBackward([bTM1.VLs; bTM2.VLs], [bTM1.VRs; -1*bTM2.VRs])
+Base.:*(a::Number, bTM::MPSMPOMPSTransferMatrixBackward) = MPSMPOMPSTransferMatrixBackward(bTM.VLs, a * bTM.VRs)
+Base.:*(bTM::MPSMPOMPSTransferMatrixBackward, a::Number) = MPSMPOMPSTransferMatrixBackward(bTM.VLs, a * bTM.VRs)
 
-function right_env_backward(TM::MPSMPSTransferMatrix, λ::Number, vr::RhoTensor, ∂vr::RhoTensor)
+function right_env_backward(TM::MPSMPOMPSTransferMatrix, λ::Number, vr::EnvTensorR, ∂vr::EnvTensorR)
     init = similar(vr)
     randomize!(init); 
     init = init - dot(vr, init) * vr # important. the subtracted part lives in the null space of flip(TM) - λ*I
@@ -26,7 +21,7 @@ function right_env_backward(TM::MPSMPSTransferMatrix, λ::Number, vr::RhoTensor,
     return ξr_adj'
 end
 
-function left_env_backward(TM::MPSMPSTransferMatrix, λ::Number, vl::RhoTensor, ∂vl::RhoTensor)
+function left_env_backward(TM::MPSMPOMPSTransferMatrix, λ::Number, vl::EnvTensorL, ∂vl::EnvTensorL)
     init = similar(vl)
     randomize!(init); 
     init = init - dot(vl, init) * vl # important
@@ -38,11 +33,12 @@ function left_env_backward(TM::MPSMPSTransferMatrix, λ::Number, vl::RhoTensor, 
     return ξl_adj'
 end
 
-function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPSTransferMatrix)
+function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPOMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
+    space_middle = domain(TM.middle)[1]
 
-    init = TensorMap(rand, ComplexF64, space_below, space_above)
+    init = TensorMap(rand, ComplexF64, space_below*space_middle, space_above)
     λrs, vrs, _ = eigsolve(TM, init, 1, :LM)
     λr, vr = λrs[1], ρrs[1]
 
@@ -54,12 +50,12 @@ function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPSTransferMatrix)
 end
 
 function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPSTransferMatrix)
-
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
+    space_middle = domain(TM.middle)[1]
 
-    init = TensorMap(rand, ComplexF64, space_above, space_below)
-    λls, vls, _ = eigsolve(flip(TM), init, 1, :LR)
+    init = TensorMap(rand, ComplexF64, space_above, space_middle*space_below)
+    λls, vls, _ = eigsolve(flip(TM), init, 1, :LM)
     λl, vl = λls[1], vls[1]
    
     function left_env_pushback(∂vl)
@@ -69,20 +65,23 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPSTransferMatrix)
     return vl, left_env_pushback
 end
 
-function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::MPSTensor)
+function ChainRulesCore.rrule(::Type{MPSMPOMPSTransferMatrix}, Au::MPSTensor, M::MPOTensor, Ad::MPSTensor, isflipped::Bool)
 
-    TM = MPSMPSTransferMatrix(Au, Ad, false)
+    TM = MPSMPOMPSTransferMatrix(Au, M, Ad, false)
     
     function TransferMatrix_pushback(∂TM)
         ∂Au = 0 * similar(Au)
+        ∂M = 0 * similar(M)
         ∂Ad = 0 * similar(Ad)
         for (VL, VR) in zip(∂TM.VLs, ∂TM.VRs)
-            @tensor ∂Ad_j[-1 -2; -3] := VL[-1; 1] * Au[1 -2; 2] * VR[2; -3]
-            @tensor ∂Au_j[-1 -2; -3] := VL'[-1; 1] * Ad[1 -2; 2] * VR'[2; -3]
+            @tensor ∂Ad_j[-1 -2; -3] := VL[-1 3; 1] * Au[1 4; 2] * conj(M[3 4; -2 5]) * VR[2; -3 5]
+            @tensor ∂M[-1 -2; -3 -4] := VL[1 -1; 4] * conj(Ad[1 -3; 2]) * VR[3; 2 -4] * Au[4 -2; 3] 
+            @tensor ∂Au_j[-1 -2; -3] := conj(VL[1 3; -1]) * M[3 -2; 4 5] * Ad[1 4; 2] * VR[2 5; -3]
             ∂Au += ∂Au_j
+            ∂M += ∂M_j
             ∂Ad += ∂Ad_j
         end
-        return NoTangent(), ∂Au, ∂Ad
+        return NoTangent(), ∂Au, ∂M, ∂Ad, NoTangent()
     end
     return TM, TransferMatrix_pushback 
 end
