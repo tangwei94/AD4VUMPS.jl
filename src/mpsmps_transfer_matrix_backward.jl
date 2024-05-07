@@ -39,7 +39,7 @@ function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPSTransferMatrix)
 
     init = TensorMap(rand, ComplexF64, space_below, space_above)
     λrs, vrs, _ = eigsolve(TM, init, 1, :LM)
-    λr, vr = λrs[1], ρrs[1]
+    λr, vr = λrs[1], vrs[1]
 
     function right_env_pushback(∂vr)
         ξr = right_env_backward(TM, λr, vr, ∂vr)
@@ -64,9 +64,9 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPSTransferMatrix)
     return vl, left_env_pushback
 end
 
-function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::MPSTensor)
+function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::MPSTensor, isflipped::Bool)
 
-    TM = MPSMPSTransferMatrix(Au, Ad, false)
+    TM = MPSMPSTransferMatrix(Au, Ad, false) # TODO. I should remove isflipped from the struct
     
     function TransferMatrix_pushback(∂TM)
         ∂Au = 0 * similar(Au)
@@ -77,7 +77,7 @@ function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::M
             ∂Au += ∂Au_j
             ∂Ad += ∂Ad_j
         end
-        return NoTangent(), ∂Au, ∂Ad
+        return NoTangent(), ∂Au, ∂Ad, NoTangent()
     end
     return TM, TransferMatrix_pushback 
 end

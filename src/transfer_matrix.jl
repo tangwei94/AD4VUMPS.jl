@@ -1,28 +1,28 @@
 abstract type AbstractTransferMatrix end
 
-struct MPSMPS_TransferMatrix{A<:AbstractTensorMap,C<:AbstractTensorMap} <:
+struct MPSMPSTransferMatrix{A<:MPSTensor,C<:MPSTensor} <:
        AbstractTransferMatrix
     above::A
     below::C
     isflipped::Bool
 end
-struct MPSMPOMPS_TransferMatrix{A<:AbstractTensorMap,B<:AbstractTensorMap,C<:AbstractTensorMap} <:
+struct MPSMPOMPSTransferMatrix{A<:AbstractTensorMap,B<:AbstractTensorMap,C<:AbstractTensorMap} <:
        AbstractTransferMatrix
     above::A
     middle::B
     below::C
     isflipped::Bool
 end
-#struct MPSMPS_TransferMatrixBackward
+#struct MPSMPSTransferMatrixBackward
 
-function TensorKit.flip(TM::MPSMPS_TransferMatrix)
-    return MPSMPS_TransferMatrix(TM.above, TM.below, true)
+function TensorKit.flip(TM::MPSMPSTransferMatrix)
+    return MPSMPSTransferMatrix(TM.above, TM.below, true)
 end
-function TensorKit.flip(TM::MPSMPOMPS_TransferMatrix)
-    return MPSMPOMPS_TransferMatrix(TM.above, TM.middle, TM.below, true)
+function TensorKit.flip(TM::MPSMPOMPSTransferMatrix)
+    return MPSMPOMPSTransferMatrix(TM.above, TM.middle, TM.below, true)
 end
 
-function (TM::MPSMPOMPS_TransferMatrix)(v)
+function (TM::MPSMPOMPSTransferMatrix)(v)
     if TM.isflipped == false # right eigenvector
         @tensor Tv[-1 -2; -3] := TM.below[-1 3 ; 1] * TM.middle[-2 5; 3 2] * conj(TM.above[-3 5; 4]) * v[1 2; 4]
         return Tv
@@ -32,7 +32,7 @@ function (TM::MPSMPOMPS_TransferMatrix)(v)
     end
 end
 
-function (TM::MPSMPS_TransferMatrix)(v)
+function (TM::MPSMPSTransferMatrix)(v)
     if TM.isflipped == false # right eigenvector
         @tensor Tv[-1; -2] := TM.below[-1 3; 1] * conj(TM.above[-2 3; 2]) * v[1; 2]
         return Tv
@@ -42,7 +42,7 @@ function (TM::MPSMPS_TransferMatrix)(v)
     end
 end
 
-function right_env(TM::MPSMPS_TransferMatrix)
+function right_env(TM::MPSMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
 
@@ -52,7 +52,7 @@ function right_env(TM::MPSMPS_TransferMatrix)
     return ρrs[1]
 end
 
-function left_env(TM::MPSMPS_TransferMatrix)
+function left_env(TM::MPSMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
 
@@ -62,7 +62,7 @@ function left_env(TM::MPSMPS_TransferMatrix)
     return ρls[1]
 end
 
-function right_env(TM::MPSMPOMPS_TransferMatrix)
+function right_env(TM::MPSMPOMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
     space_middle = domain(TM.middle)[1]
@@ -73,7 +73,7 @@ function right_env(TM::MPSMPOMPS_TransferMatrix)
     return ρrs[1]
 end
 
-function left_env(TM::MPSMPOMPS_TransferMatrix)
+function left_env(TM::MPSMPOMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
     space_middle = domain(TM.middle)[1]

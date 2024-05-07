@@ -9,8 +9,9 @@ using ChainRules, ChainRulesCore, Zygote
 using OptimKit
 using JLD2
 
-export MPSMPS_TransferMatrix, MPSMPOMPS_TransferMatrix
+export MPSMPSTransferMatrix, MPSMPOMPSTransferMatrix
 export right_env, left_env
+export MPSMPSTransferMatrixBackward
 
 include("utils.jl")
 include("transfer_matrix.jl");
