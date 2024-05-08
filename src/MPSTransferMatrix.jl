@@ -13,10 +13,12 @@ export randomize!
 export MPSMPSTransferMatrix, MPSMPOMPSTransferMatrix
 export right_env, left_env
 export MPSMPSTransferMatrixBackward
+export mps_update, vumps_update, vumps
 
-include("utils.jl")
+include("utils.jl");
 include("transfer_matrix.jl");
-include("mpsmps_transfer_matrix_backward.jl")
-include("mpsmpomps_transfer_matrix_backward.jl")
+include("mpsmps_transfer_matrix_backward.jl");
+include("mpsmpomps_transfer_matrix_backward.jl");
+include("vumps.jl");
 
 end
