@@ -8,7 +8,7 @@ using MPSTransferMatrix
 function test_ADgrad(_F, X)
 
     # retraction direction
-    for i in 1:6
+    for i in 1:10
         sX = similar(X)
         randomize!(sX)
 
