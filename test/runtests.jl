@@ -22,10 +22,7 @@ function test_ADgrad(_F, X)
         ∂X = _F'(X);
         ∂αad = real(dot(∂X, sX))
         @test abs(∂α1 - ∂αad) < 1e-5
-        if !(abs(∂α1 - ∂αad) < 1e-5) 
-            println("$∂α1 $∂αad")
-        end
-        #@test abs(∂α2 - ∂αad) < 1e-6
+        @test abs(∂α2 - ∂αad) < 1e-6
     end
 end
 
