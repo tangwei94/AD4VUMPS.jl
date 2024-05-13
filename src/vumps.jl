@@ -41,19 +41,61 @@ function vumps_update(AL, AR, T)
     return AC, C
 end
 
-function vumps(A, T; maxiter=500, tol=1e-12)
+function gauge_fixing_L(AL1, AL2)
+    α, U = ignore_derivatives() do 
+        Tl = MPSMPSTransferMatrix(AL1, AL2, false)
+        U = left_env(Tl)
+        @tensor AL2_new[-1 -2; -3] := U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
+        
+        M = similar(AL2_new)
+        randomize!(M)
+        α = tr(M' * AL1) / tr(M' * AL2_new)
+       
+        return α, U
+    end
+
+    @tensor AL2_new[-1 -2; -3] := α * U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
+    return AL2_new
+end
+function gauge_fixing_R(AR1, AR2)
+    α, U = ignore_derivatives() do 
+        Tr = MPSMPSTransferMatrix(AR1, AR2, false)
+        U = right_env(Tr)
+        @tensor AR2_new[-1 -2; -3] := U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
+        
+        M = similar(AR2_new)
+        randomize!(M)
+        α = tr(M' * AR1) / tr(M' * AR2_new)
+        
+        return α, U
+    end
+
+    @tensor AR2_new[-1 -2; -3] := α * U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
+    return AR2_new
+end
+
+function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, ad_steps=100, tol=1e-12)
     # TODO.: canonical form conversion
-    sp = domain(A)[1]
-    C = TensorMap(rand, ComplexF64, sp, sp)
-    AL, AR = mps_update(A, C)
+    AL, AR = ignore_derivatives() do
+        sp = domain(A)[1]
+        C = TensorMap(rand, ComplexF64, sp, sp)
+        AL, AR = mps_update(A, C)
+        return AL, AR
+    end
 
     conv_meas = 999
     ix = 0
-    while conv_meas > tol
+    while conv_meas > tol && ix < maxiter
         ix += 1
         AC, C = vumps_update(AL, AR, T)
         AL, AR, conv_meas = mps_update(AC, C)
         println(ix, ' ', conv_meas)
     end
+    for ix in 1:ad_steps
+        AC, C = vumps_update(AL, AR, T)
+        AL, AR, _ = mps_update(AC, C)
+        println(ix, ' ', conv_meas)
+    end
+    
     return AL, AR
 end

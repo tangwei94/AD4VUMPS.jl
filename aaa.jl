@@ -12,72 +12,6 @@ M = TensorMap(rand, ComplexF64, sp2*sp2, sp2*sp2);
 AC = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
 C = TensorMap(rand, ComplexF64, sp1, sp1);
 
-AL, AR, conv_meas = mps_update(AC, C)
-
-function _F(AC, C)
-    AL, AR, conv_meas = mps_update(AC, C)
-    return norm(tr(AL'*AR))/norm(AL)/norm(AR) 
-end
-
-function _F1(C)
-    UAC_l, PAC_l = leftorth(AC; alg=QRpos())
-    UC_l, PC_l = leftorth(C; alg=QRpos())
-
-    PAC_r, UAC_r = rightorth(permute(AC, (1,), (2,3)); alg=LQpos())
-    PC_r, UC_r = rightorth(C; alg=LQpos())
-
-    AL = UAC_l * UC_l'
-    AR = permute(UC_r' * UAC_r, (1, 2), (3,))
-    # check AC - AL * C and AC - C * AR
-    conv_meas = ignore_derivatives() do
-        ϵL = norm(PAC_l - PC_l) 
-        ϵR = norm(PAC_r - PC_r)
-        conv_meas = max(ϵL, ϵR)
-        return conv_meas
-    end
-
-    return norm(tr(AL'*AR))/norm(AL)/norm(AR) 
-end
-
-_F1(C)
-_F1'(C)
-
-
-Q = similar(AL)
-randomize!(Q)
-QC = similar(C)
-randomize!(QC)
-
-function _F(M)
-    TM_L = MPSMPOMPSTransferMatrix(AL, M, AL, false)
-    TM_R = MPSMPOMPSTransferMatrix(AR, M, AR, false)
-
-    EL = left_env(TM_L)
-    ER = right_env(TM_R)
-
-    ER_permuted = permute(ER, (3, 2), (1, ))
-    EL_permuted = permute(EL', (3, 2), (1, ))
-
-    AC_map = MPSMPOMPSTransferMatrix(EL_permuted, M, ER_permuted, false)
-    AC_permuted = right_env(AC_map) 
-    AC = permute(AC_permuted, (3, 2), (1, ))
-
-    return norm(Q' * AC) / norm(AC)
-end
-
-function _FC(M)
-    TM_L = MPSMPOMPSTransferMatrix(AL, M, AL, false)
-    TM_R = MPSMPOMPSTransferMatrix(AR, M, AR, false)
-
-    EL = left_env(TM_L)
-    ER = right_env(TM_R)
-
-    C_map = MPSMPSTransferMatrix(EL', ER, false)
-    C = left_env(C_map) 
-
-    return norm(QC' * C) / norm(C)
-end
-
 function tensor_square_ising(β::Real)
     t = TensorMap(ComplexF64[exp(β) exp(-β); exp(-β) exp(β)], ℂ^2, ℂ^2)
     sqrt_t = sqrt(t)
@@ -89,12 +23,83 @@ function tensor_square_ising(β::Real)
     @tensor T[-1 -2 ; -3 -4] := sqrt_t[-1; 1] * sqrt_t[-2; 2] * sqrt_t[3; -3] * sqrt_t[4; -4] * δ[1 2; 3 4]
     return T
 end
-βc = asinh(1) / 2
-M = tensor_square_ising(βc)
+
+T = tensor_square_ising(asinh(1) / 2)
 A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
-vumps(A, M)
 
+AL, AR = vumps(A, T; ad_steps=20)
+AC, C = vumps_update(AL, AR, T)
+AL1, AR1, _ = mps_update(AC, C)
+using MPSKit
+ψl1 = InfiniteMPS([AL1])
+ψl = InfiniteMPS([AL])
+ψr1 = InfiniteMPS([AR1])
+ψr = InfiniteMPS([AR])
+@show norm(dot(ψl1, ψl))
+@show norm(dot(ψr1, ψr))
+@show norm(dot(ψl, ψr))
 
+AL2 = gauge_fixing_L(AL, AL1)
+AL.data ./ AL2.data 
 
+AL - AL2 |> norm
+AR2 = gauge_fixing_R(AR, AR1)
+AR - AR2 |> norm
 
+function vumps1(A, T; maxiter=500, ad_steps=10, tol=1e-12)
+    # TODO.: canonical form conversion
+    AL, AR = ignore_derivatives() do
+        sp = domain(A)[1]
+        C = TensorMap(rand, ComplexF64, sp, sp)
+        AL, AR = mps_update(A, C)
 
+        conv_meas = 999
+        ix = 0
+        while conv_meas > tol && ix < maxiter
+            ix += 1
+            AC, C = vumps_update(AL, AR, T)
+            AL, AR, conv_meas = mps_update(AC, C)
+            println(ix, ' ', conv_meas)
+        end
+        return AL, AR
+    end
+    
+    for _ in 1:ad_steps
+        AC, C = vumps_update(AL, AR, T)
+        AL1, AR1, _ = mps_update(AC, C)
+        AL = gauge_fixing_L(AL, AL1)
+        AR = gauge_fixing_R(AR, AR1)
+        @tensor vl[-1] := AL[1 -1; 1]
+        ψl1 = InfiniteMPS([AL1])
+        ψl = InfiniteMPS([AL])
+        ψr1 = InfiniteMPS([AR1])
+        ψr = InfiniteMPS([AR])
+        @show norm(dot(ψl1, ψl))
+        @show norm(dot(ψr1, ψr))
+        @show norm(dot(ψl, ψr))
+        @show norm(vl)
+    end
+    return AL, AR
+end
+
+function _F(T)
+    AL, AR = vumps(A, T; ad_steps=100)
+    @tensor vl[-1] := AL[1 -1; 1]
+    return norm(vl)
+end
+    
+_F(T)
+_F(T)
+_F(T)
+ad1 = _F'(T)
+ad2 = _F'(T)
+ad3 = _F'(T)
+
+ad1.data .- ad2.data
+
+norm(ad1)
+norm(ad2)
+norm(ad3)
+ad1 - ad3 |> norm
+ad1 - ad2 |> norm
+ad2 - ad3 |> norm

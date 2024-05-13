@@ -41,3 +41,4 @@ end
 
 include("test_mpsmps_transfer_matrix.jl");
 include("test_mpsmpomps_transfer_matrix.jl");
+include("test_vumps.jl");
