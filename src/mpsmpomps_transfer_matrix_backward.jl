@@ -70,9 +70,9 @@ function ChainRulesCore.rrule(::Type{MPSMPOMPSTransferMatrix}, Au::MPSTensor, M:
     TM = MPSMPOMPSTransferMatrix(Au, M, Ad, false)
     
     function TransferMatrix_pushback(∂TM)
-        ∂Au = 0 * similar(Au)
-        ∂M = 0 * similar(M)
-        ∂Ad = 0 * similar(Ad)
+        ∂Au = zero(Au)
+        ∂M = zero(M)
+        ∂Ad = zero(Ad)
         for (VL, VR) in zip(∂TM.VLs, ∂TM.VRs)
             @tensor ∂Ad_j[-1 -2; -3] := VL'[-1 3; 1] * Au[1 4; 2] * conj(M[3 4; -2 5]) * VR'[2; -3 5]
             @tensor ∂M_j[-1 -2; -3 -4] := VL'[1 -1; 4] * conj(Ad[1 -3; 2]) * VR'[3; 2 -4] * Au[4 -2; 3] 

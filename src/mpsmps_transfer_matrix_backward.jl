@@ -69,8 +69,8 @@ function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::M
     TM = MPSMPSTransferMatrix(Au, Ad, false) # TODO. I should remove isflipped from the struct
     
     function TransferMatrix_pushback(∂TM)
-        ∂Au = 0 * similar(Au)
-        ∂Ad = 0 * similar(Ad)
+        ∂Au = zero(Au)
+        ∂Ad = zero(Ad)
         for (VL, VR) in zip(∂TM.VLs, ∂TM.VRs)
             @tensor ∂Ad_j[-1 -2; -3] := VL'[-1; 1] * Au[1 -2; 2] * VR'[2; -3]
             @tensor ∂Au_j[-1 -2; -3] := VL[-1; 1] * Ad[1 -2; 2] * VR[2; -3]
