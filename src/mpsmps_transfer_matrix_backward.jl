@@ -54,7 +54,7 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPSTransferMatrix)
     space_below = domain(TM.below)[1]
 
     init = TensorMap(rand, ComplexF64, space_above, space_below)
-    λls, vls, _ = eigsolve(flip(TM), init, 1, :LR)
+    λls, vls, _ = eigsolve(flip(TM), init, 1, :LM)
     λl, vl = λls[1], vls[1]
    
     function left_env_pushback(∂vl)
