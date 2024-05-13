@@ -9,7 +9,7 @@
 
     function _F1(X)
         TM1 = MPSMPOMPSTransferMatrix(X, M, X, false)
-        v1 = right_env(TM1)
+        v1 = right_env(TM1; init=A)
         return norm(tr(Q * v1)) / norm(v1) 
     end
     function _F2(X)

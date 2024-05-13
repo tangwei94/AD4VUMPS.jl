@@ -42,55 +42,49 @@ function (TM::MPSMPOMPSTransferMatrix)(v)
     end
 end
 
-function right_env(TM::MPSMPSTransferMatrix)
-    space_above = domain(TM.above)[1]
-    space_below = domain(TM.below)[1]
-
-    init = TensorMap(rand, ComplexF64, space_below, space_above)
+function right_env(TM::MPSMPSTransferMatrix; init::Union{RhoTensor, Nothing}=nothing)
+    if isnothing(init)
+        space_above = domain(TM.above)[1]
+        space_below = domain(TM.below)[1]
+        init = TensorMap(rand, ComplexF64, space_below, space_above)
+    end
     _, ρrs, _ = eigsolve(TM, init, 1, :LM)
 
     return ρrs[1]
 end
 
-function left_env(TM::MPSMPSTransferMatrix)
-    space_above = domain(TM.above)[1]
-    space_below = domain(TM.below)[1]
-
-    init = TensorMap(rand, ComplexF64, space_above, space_below)
+function left_env(TM::MPSMPSTransferMatrix; init::Union{RhoTensor, Nothing}=nothing)
+    if isnothing(init)
+        space_above = domain(TM.above)[1]
+        space_below = domain(TM.below)[1]
+        init = TensorMap(rand, ComplexF64, space_above, space_below)
+    end
     _, ρls, _ = eigsolve(flip(TM), init, 1, :LM)
 
     return ρls[1]
 end
 
-function right_env(TM::MPSMPOMPSTransferMatrix)
-    space_above = domain(TM.above)[1]
-    space_below = domain(TM.below)[1]
-    space_middle = domain(TM.middle)[1]
-
-    init = TensorMap(rand, ComplexF64, space_below*space_middle, space_above)
+function right_env(TM::MPSMPOMPSTransferMatrix; init::Union{EnvTensorR, Nothing}=nothing)
+    if isnothing(init)
+        space_above = domain(TM.above)[1]
+        space_below = domain(TM.below)[1]
+        space_middle = domain(TM.middle)[1]
+        init = TensorMap(rand, ComplexF64, space_below*space_middle, space_above)
+    end
     _, ρrs, _ = eigsolve(TM, init, 1, :LM)
 
     return ρrs[1]
 end
 
-function left_env(TM::MPSMPOMPSTransferMatrix)
-    space_above = domain(TM.above)[1]
-    space_below = domain(TM.below)[1]
-    space_middle = domain(TM.middle)[1]
-
-    init = TensorMap(rand, ComplexF64, space_above, space_below*space_middle)
+function left_env(TM::MPSMPOMPSTransferMatrix; init::Union{EnvTensorL, Nothing}=nothing)
+    if isnothing(init)
+        space_above = domain(TM.above)[1]
+        space_below = domain(TM.below)[1]
+        space_middle = domain(TM.middle)[1]
+        init = TensorMap(rand, ComplexF64, space_above, space_below*space_middle)
+    end
     _, ρls, _ = eigsolve(flip(TM), init, 1, :LM)
 
     return ρls[1]
 end
-
-
-
-
-
-
-
-
-
-
 

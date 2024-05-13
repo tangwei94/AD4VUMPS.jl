@@ -33,12 +33,13 @@ function left_env_backward(TM::MPSMPOMPSTransferMatrix, λ::Number, vl::EnvTenso
     return ξl
 end
 
-function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPOMPSTransferMatrix)
-    space_above = domain(TM.above)[1]
-    space_below = domain(TM.below)[1]
-    space_middle = domain(TM.middle)[1]
-
-    init = TensorMap(rand, ComplexF64, space_below*space_middle, space_above)
+function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPOMPSTransferMatrix; init::Union{EnvTensorR, Nothing}=nothing)
+    if isnothing(init)
+        space_above = domain(TM.above)[1]
+        space_below = domain(TM.below)[1]
+        space_middle = domain(TM.middle)[1]
+        init = TensorMap(rand, ComplexF64, space_below*space_middle, space_above)
+    end
     λrs, vrs, _ = eigsolve(TM, init, 1, :LM)
     λr, vr = λrs[1], vrs[1]
 
@@ -49,12 +50,13 @@ function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPOMPSTransferMatrix)
     return vr, right_env_pushback
 end
 
-function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPOMPSTransferMatrix)
-    space_above = domain(TM.above)[1]
-    space_below = domain(TM.below)[1]
-    space_middle = domain(TM.middle)[1]
-
-    init = TensorMap(rand, ComplexF64, space_above, space_below*space_middle)
+function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPOMPSTransferMatrix; init::Union{EnvTensorL, Nothing}=nothing)
+    if isnothing(init)
+        space_above = domain(TM.above)[1]
+        space_below = domain(TM.below)[1]
+        space_middle = domain(TM.middle)[1]
+        init = TensorMap(rand, ComplexF64, space_above, space_below*space_middle)
+    end
     λls, vls, _ = eigsolve(flip(TM), init, 1, :LM)
     λl, vl = λls[1], vls[1]
    

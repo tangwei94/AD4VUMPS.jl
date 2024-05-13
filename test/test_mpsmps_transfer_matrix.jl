@@ -3,10 +3,11 @@
     sp2 = ℂ^3;
     A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
     B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+    vinit = TensorMap(rand, ComplexF64, sp1, sp1);
 
     function _F1(X)
         TM1 = MPSMPSTransferMatrix(X, X, false)
-        v1 = right_env(TM1)
+        v1 = right_env(TM1; init=vinit)
         return norm(tr(v1)) / norm(v1) 
     end
     function _F2(X)
