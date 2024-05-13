@@ -21,6 +21,7 @@ end
 
 function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor; 
     AC_init::Union{Nothing, MPSTensor}=nothing, C_init::Union{Nothing, MPSBondTensor}=nothing)
+
     TM_L = MPSMPOMPSTransferMatrix(AL, T, AL, false)
     TM_R = MPSMPOMPSTransferMatrix(AR, T, AR, false)
 
@@ -36,75 +37,68 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor;
         if isnothing(AC_init)
             return nothing
         else
-            return permute(AC_init, (3, 2), (1)) 
+            return permute(AC_init, (3, 2), (1, )) 
         end
     end
 
-    AC_permuted = right_env(AC_map; init=AC_init_permuted) 
+    AC_permuted = right_env(AC_map; init=ignore_derivatives(AC_init_permuted)) 
     AC = permute(AC_permuted, (3, 2), (1, ))
 
     # C map
     C_map = MPSMPSTransferMatrix(EL', ER, false)
-    C = left_env(C_map; init=C_init) 
+    C = left_env(C_map; init=ignore_derivatives(C_init)) 
 
     return AC, C
 end
 
-function gauge_fixing_L(AL1, AL2)
-    α, U = ignore_derivatives() do 
-        Tl = MPSMPSTransferMatrix(AL1, AL2, false)
-        U = left_env(Tl)
-        @tensor AL2_new[-1 -2; -3] := U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
-        
-        M = similar(AL2_new)
-        randomize!(M)
-        α = tr(M' * AL1) / tr(M' * AL2_new)
-       
-        return α, U
-    end
-
-    @tensor AL2_new[-1 -2; -3] := α * U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
-    return AL2_new
-end
-function gauge_fixing_R(AR1, AR2)
-    α, U = ignore_derivatives() do 
-        Tr = MPSMPSTransferMatrix(AR1, AR2, false)
-        U = right_env(Tr)
-        @tensor AR2_new[-1 -2; -3] := U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
-        
-        M = similar(AR2_new)
-        randomize!(M)
-        α = tr(M' * AR1) / tr(M' * AR2_new)
-        
-        return α, U
-    end
-
-    @tensor AR2_new[-1 -2; -3] := α * U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
-    return AR2_new
-end
+#function gauge_fixing_L(AL1, AL2)
+#    α, U = ignore_derivatives() do 
+#        Tl = MPSMPSTransferMatrix(AL1, AL2, false)
+#        U = left_env(Tl)
+#        @tensor AL2_new[-1 -2; -3] := U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
+#        
+#        M = similar(AL2_new)
+#        randomize!(M)
+#        α = tr(M' * AL1) / tr(M' * AL2_new)
+#       
+#        return α, U
+#    end
+#
+#    @tensor AL2_new[-1 -2; -3] := α * U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
+#    return AL2_new
+#end
+#function gauge_fixing_R(AR1, AR2)
+#    α, U = ignore_derivatives() do 
+#        Tr = MPSMPSTransferMatrix(AR1, AR2, false)
+#        U = right_env(Tr)
+#        @tensor AR2_new[-1 -2; -3] := U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
+#        
+#        M = similar(AR2_new)
+#        randomize!(M)
+#        α = tr(M' * AR1) / tr(M' * AR2_new)
+#        
+#        return α, U
+#    end
+#
+#    @tensor AR2_new[-1 -2; -3] := α * U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
+#    return AR2_new
+#end
 
 function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, ad_steps=100, tol=1e-12)
     # TODO.: canonical form conversion
-    AL, AR = ignore_derivatives() do
-        sp = domain(A)[1]
-        C = TensorMap(rand, ComplexF64, sp, sp)
-        AL, AR = mps_update(A, C)
-        return AL, AR
-    end
-
+    sp = domain(A)[1]
+    C = TensorMap(rand, ComplexF64, sp, sp)
+    AL, AR = mps_update(A, C)
     conv_meas = 999
     ix = 0
+    AC, C = vumps_update(AL, AR, T)
     while conv_meas > tol && ix < maxiter
         ix += 1
-        AC, C = vumps_update(AL, AR, T)
-        AL, AR, conv_meas = mps_update(AC, C)
+        AC1, C1 = vumps_update(AL, AR, T; AC_init=AC, C_init=C)
+        AL, AR, conv_meas = mps_update(AC1, C1)
+        AC, C = AC1, C1
         println(ix, ' ', conv_meas)
     end
-    for ix in 1:ad_steps
-        AC, C = vumps_update(AL, AR, T)
-        AL, AR, _ = mps_update(AC, C)
-        println(ix, ' ', conv_meas)
-    end
-    
-    return AL, AR
+    return AL, AR, AC, C
+
 end
