@@ -41,12 +41,12 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor;
         end
     end
 
-    AC_permuted = right_env(AC_map; init=ignore_derivatives(AC_init_permuted)) 
+    AC_permuted = right_env(AC_map; init=AC_init_permuted) 
     AC = permute(AC_permuted, (3, 2), (1, ))
 
     # C map
     C_map = MPSMPSTransferMatrix(EL', ER, false)
-    C = left_env(C_map; init=ignore_derivatives(C_init)) 
+    C = left_env(C_map; init=C_init) 
 
     return AC, C
 end
@@ -84,7 +84,7 @@ end
 #    return AR2_new
 #end
 
-function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, ad_steps=100, tol=1e-12)
+function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, tol=1e-12)
     # TODO.: canonical form conversion
     sp = domain(A)[1]
     C = TensorMap(rand, ComplexF64, sp, sp)
@@ -94,11 +94,24 @@ function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, ad_steps=100, tol=1e-12)
     AC, C = vumps_update(AL, AR, T)
     while conv_meas > tol && ix < maxiter
         ix += 1
-        AC1, C1 = vumps_update(AL, AR, T; AC_init=AC, C_init=C)
+        AC1, C1 = vumps_update(AL, AR, T)
         AL, AR, conv_meas = mps_update(AC1, C1)
         AC, C = AC1, C1
-        println(ix, ' ', conv_meas)
+        print(ix, ' ', conv_meas, "     \r")
     end
     return AL, AR, AC, C
+end
 
+@non_differentiable vumps(::MPSTensor, ::MPOTensor) 
+
+function vumps_for_ad(T::MPOTensor; AL::MPSTensor, AR::MPSTensor, AC::MPSTensor, C::MPSBondTensor, maxiter=100)
+    AL1 = ignore_derivatives(AL) 
+    AR1 = ignore_derivatives(AR) 
+    AC1 = ignore_derivatives(AC) 
+    C1 = ignore_derivatives(C) 
+    for _ in 1:maxiter
+        AC1, C1 = vumps_update(AL1, AR1, T)
+        AL1, AR1, _ = mps_update(AC1, C1)
+    end
+    return AL1, AR1, AC1, C1
 end

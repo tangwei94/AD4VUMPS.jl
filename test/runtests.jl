@@ -5,24 +5,26 @@ using ChainRules, ChainRulesCore, Zygote
 using Revise
 using MPSTransferMatrix
 
-function test_ADgrad(_F, X)
+function test_ADgrad(_F, X; α = 1e-4, tol = 1e-8, sX = nothing, num = 10)
 
     # retraction direction
-    for i in 1:10
-        sX = similar(X)
-        randomize!(sX)
+    for i in 1:num
+        if isnothing(sX)
+            sX = similar(X)
+            randomize!(sX)
+        end
 
         # finite diff along retraction direction
-        α = 1e-5
-        ∂α1 = (_F(X + α * sX) - _F(X - α * sX)) / (2 * α)
-        α = 1e-6
-        ∂α2 = (_F(X + α * sX) - _F(X - α * sX)) / (2 * α)
+        ∂α1 = (-_F(X + 2*α * sX) + 8*_F(X + α * sX) - 8*_F(X - α * sX) + _F(X - 2*α * sX)) / (12 * α)
 
         # test correctness of derivative from AD
         ∂X = _F'(X);
         ∂αad = real(dot(∂X, sX))
-        @test abs(∂α1 - ∂αad) < 1e-5
-        @test abs(∂α2 - ∂αad) < 1e-6
+        @test abs(∂α1 - ∂αad) / abs(∂α1) < tol 
+        if !(abs(∂α1 - ∂αad) / abs(∂α1) < tol)
+            println("∂α1: ", ∂α1)
+            println("∂αad: ", ∂αad)
+        end
     end
 end
 

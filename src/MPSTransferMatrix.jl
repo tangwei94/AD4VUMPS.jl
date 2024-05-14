@@ -13,7 +13,7 @@ export randomize!
 export MPSMPSTransferMatrix, MPSMPOMPSTransferMatrix
 export right_env, left_env
 export MPSMPSTransferMatrixBackward
-export mps_update, vumps_update, gauge_fixing_L, gauge_fixing_R, vumps
+export mps_update, vumps_update, vumps, vumps_for_ad
 
 include("utils.jl");
 include("transfer_matrix.jl");
