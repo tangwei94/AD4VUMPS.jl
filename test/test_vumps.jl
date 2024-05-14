@@ -50,6 +50,27 @@ end
     test_ADgrad(_F3, T; α=1e-4, tol=1e-4)
 end
 
+@testset "test AD for one vumps step" for ix in 1:10
+
+    sp1 = ℂ^4;
+    sp2 = ℂ^2;
+
+    AC0 = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+    C0 = TensorMap(rand, ComplexF64, sp1, sp1);
+    AL, AR, _ = mps_update(AC0, C0);
+
+    function _F(T; AL1=AL, AR1=AR)
+        AC1, C1 = vumps_update(AL1, AR1, T)
+        AL2, AR2, _ = mps_update(AC1, C1)
+
+        @tensor vl[-1] := AL2[1 -1; 1]
+        return norm(vl) / norm(AL2)
+    end
+
+    T = tensor_square_ising(asinh(1) / 2)
+    test_ADgrad(_F, T)
+end
+
 @testset "test ad for vumps" for ix in 1:10
     T = tensor_square_ising(asinh(1) / 2)
     A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
@@ -62,7 +83,7 @@ end
     end
     ad1 = _F1'(T)
     ad2 = _F1'(T)
-    @show norm(ad1 - ad2)
+    @show norm(ad1), norm(ad2)
     @test norm(ad1 - ad2) < 1e-8
    
     function _F(T)
@@ -73,13 +94,56 @@ end
     end
     ad1 = _F'(T)
     ad2 = _F'(T)
+    @show norm(ad1), norm(ad2)
     @test norm(ad1 - ad2) < 1e-8
 
     for ix in []
-        sX_dat = rand(Float64, 2, 2, 2, 2)
-        sX_dat = sX_dat + permutedims(sX_dat, (2, 1, 4, 3)) + permutedims(sX_dat, (3, 4, 1, 2)) + permutedims(sX_dat, (4, 3, 2, 1))
-        sX_dat = sX_dat + permutedims(sX_dat, (1, 3, 2, 4))
-        sX = TensorMap(sX_dat, ℂ^2*ℂ^2, ℂ^2*ℂ^2)
+        sX = random_real_symmetric_tensor(2)
+        test_ADgrad(_F, T; α=1e-4, tol=1e-4, sX=sX, num=1)
+    end
+end
+
+@testset "test ad for vumps" for ix in 1:10
+    T = tensor_square_ising(asinh(1) / 2)
+    A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
+    O = random_real_symmetric_tensor(2)
+    AL, AR, AC, C = vumps(A, T)
+    
+    function _F1(T)
+        AL1, AR1, AC1, C1 = vumps_for_ad(T; AL=AL, AR=AR, AC=AC, C=C)
+        TM = MPSMPOMPSTransferMatrix(AL1, T, AL1, false)
+        EL = left_env(TM)
+        ER = right_env(TM)
+
+        @tensor a = EL[4; 1 2] * AL1[1 3; 6] * O[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+        @tensor b = EL[4; 1 2] * AL1[1 3; 6] * T[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+
+        return real(a/b)
+    end
+    ad1 = _F1'(T)
+    ad2 = _F1'(T)
+    @show norm(ad1), norm(ad2)
+    @test norm(ad1 - ad2) < 1e-8
+   
+    function _F(T)
+        AL, AR, AC, C = vumps(A, T)
+        AL1, AR1, AC1, C1 = vumps_for_ad(T; AL=AL, AR=AR, AC=AC, C=C, maxiter=1)
+        TM = MPSMPOMPSTransferMatrix(AL1, T, AL1, false)
+        EL = left_env(TM)
+        ER = right_env(TM)
+
+        @tensor a = EL[4; 1 2] * AL1[1 3; 6] * O[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+        @tensor b = EL[4; 1 2] * AL1[1 3; 6] * T[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+
+        return real(a/b)
+    end
+    ad1 = _F'(T)
+    ad2 = _F'(T)
+    @show norm(ad1), norm(ad2)
+    @test norm(ad1 - ad2) < 1e-8
+
+    for ix in []
+        sX = random_real_symmetric_tensor(2)
         
         test_ADgrad(_F, T; α=1e-4, tol=1e-4, sX=sX, num=1)
     end

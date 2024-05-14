@@ -14,7 +14,7 @@ function right_env_backward(TM::MPSMPOMPSTransferMatrix, λ::Number, vr::EnvTens
     init = init - dot(vr, init) * vr # important. the subtracted part lives in the null space of flip(TM) - λ*I
     
     (norm(dot(vr, ∂vr)) > 1e-9) && @warn "right_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vr." # important
-    #∂vr = ∂vr - dot(vr, ∂vr) * vr 
+    ∂vr = ∂vr - dot(vr, ∂vr) * vr 
     ξr, info = linsolve(x -> flip(TM)(x) - λ*x, ∂vr', init') # subtle
     (info.converged == 0) && @warn "right_env_backward not converged: normres = $(info.normres)"
     
@@ -27,6 +27,7 @@ function left_env_backward(TM::MPSMPOMPSTransferMatrix, λ::Number, vl::EnvTenso
     init = init - dot(vl, init) * vl # important
 
     (norm(dot(vl, ∂vl)) > 1e-9) && @warn "left_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vl." # important
+    ∂vl = ∂vl - dot(vl, ∂vl) * vl 
     ξl, info = linsolve(x -> TM(x) - λ*x, ∂vl', init') # subtle
     (info.converged == 0) && @warn "left_env_backward not converged: normres = $(info.normres)"
 

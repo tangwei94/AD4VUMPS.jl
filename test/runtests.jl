@@ -41,6 +41,14 @@ function tensor_square_ising(β::Real)
     return T
 end
 
+function random_real_symmetric_tensor(d::Int)
+    O_dat = rand(Float64, d, d, d, d)
+    O_dat = O_dat + permutedims(O_dat, (2, 1, 4, 3)) + permutedims(O_dat, (3, 4, 1, 2)) + permutedims(O_dat, (4, 3, 2, 1))
+    O_dat = O_dat + permutedims(O_dat, (1, 3, 2, 4))
+    O = TensorMap(O_dat, ℂ^d*ℂ^d, ℂ^d*ℂ^d)
+    return O
+end
+
 include("test_mpsmps_transfer_matrix.jl");
 include("test_mpsmpomps_transfer_matrix.jl");
 include("test_vumps.jl");
