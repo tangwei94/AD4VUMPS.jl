@@ -1,7 +1,7 @@
 using TensorKit, TensorOperations, KrylovKit
 using ChainRules, ChainRulesCore, Zygote
 using Revise
-using MPSTransferMatrix
+using AD4VUMPS
 
 sp1 = ℂ^6;
 sp2 = ℂ^2;

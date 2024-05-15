@@ -1,3 +1,3 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-MPSTransferMatrix = "87d80e04-03a5-42db-b395-4c81662c4174"
+AD4VUMPS = "87d80e04-03a5-42db-b395-4c81662c4174"

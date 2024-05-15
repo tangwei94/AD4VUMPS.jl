@@ -3,7 +3,7 @@ using TensorKit, TensorOperations, KrylovKit
 using ChainRules, ChainRulesCore, Zygote
 
 using Revise
-using MPSTransferMatrix
+using AD4VUMPS
 
 function test_ADgrad(_F, X; α = 1e-4, tol = 1e-8, sX = nothing, num = 10)
 

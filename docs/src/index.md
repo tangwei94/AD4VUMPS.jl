@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = MPSTransferMatrix
+CurrentModule = AD4VUMPS
 ```
 
-# MPSTransferMatrix
+# AD4VUMPS
 
-Documentation for [MPSTransferMatrix](https://github.com/tangwei94/MPSTransferMatrix.jl).
+Documentation for [AD4VUMPS](https://github.com/tangwei94/AD4VUMPS.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [MPSTransferMatrix]
+Modules = [AD4VUMPS]
 ```

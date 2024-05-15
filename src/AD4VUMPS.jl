@@ -1,4 +1,4 @@
-module MPSTransferMatrix
+module AD4VUMPS
 
 __precompile__(true)
 

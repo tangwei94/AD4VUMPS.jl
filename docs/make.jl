@@ -1,14 +1,14 @@
-using MPSTransferMatrix
+using AD4VUMPS
 using Documenter
 
-DocMeta.setdocmeta!(MPSTransferMatrix, :DocTestSetup, :(using MPSTransferMatrix); recursive=true)
+DocMeta.setdocmeta!(AD4VUMPS, :DocTestSetup, :(using AD4VUMPS); recursive=true)
 
 makedocs(;
-    modules=[MPSTransferMatrix],
+    modules=[AD4VUMPS],
     authors="Wei Tang <tangwei@smail.nju.edu.cn> and contributors",
-    sitename="MPSTransferMatrix.jl",
+    sitename="AD4VUMPS.jl",
     format=Documenter.HTML(;
-        canonical="https://tangwei94.github.io/MPSTransferMatrix.jl",
+        canonical="https://tangwei94.github.io/AD4VUMPS.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/tangwei94/MPSTransferMatrix.jl",
+    repo="github.com/tangwei94/AD4VUMPS.jl",
     devbranch="main",
 )
