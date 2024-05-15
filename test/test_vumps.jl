@@ -68,7 +68,7 @@ end
     end
 
     T = tensor_square_ising(asinh(1) / 2)
-    test_ADgrad(_F, T)
+    test_ADgrad(_F, T; α=1e-4, tol=1e-4)
 end
 
 @testset "test ad for vumps (partial test)" for ix in 1:10

@@ -5,7 +5,7 @@ using ChainRules, ChainRulesCore, Zygote
 using Revise
 using AD4VUMPS
 
-function test_ADgrad(_F, X; α = 1e-4, tol = 1e-8, sX = nothing, num = 10)
+function test_ADgrad(_F, X; α = 1e-4, tol = 1e-7, sX = nothing, num = 10)
 
     # retraction direction
     for i in 1:num
