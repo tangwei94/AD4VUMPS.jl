@@ -2,11 +2,11 @@ function mps_update(AC::MPSTensor, C::MPSBondTensor)
         UAC_l, PAC_l = leftorth(AC; alg=QRpos())
         UC_l, PC_l = leftorth(C; alg=QRpos())
 
-        PAC_r, UAC_r = rightorth(permute(AC, (1,), (2,3)); alg=LQpos())
+        PAC_r, UAC_r = rightorth(permute(AC, ((1,), (2,3))); alg=LQpos())
         PC_r, UC_r = rightorth(C; alg=LQpos())
 
         AL = UAC_l * UC_l'
-        AR = permute(UC_r' * UAC_r, (1, 2), (3,))
+        AR = permute(UC_r' * UAC_r, ((1, 2), (3,)))
 
         # check AC - AL * C and AC - C * AR
         conv_meas = ignore_derivatives() do
@@ -29,20 +29,20 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor;
     ER = right_env(TM_R)
 
     # AC map
-    ER_permuted = permute(ER, (3, 2), (1, ))
-    EL_permuted = permute(EL', (3, 2), (1, ))
+    ER_permuted = permute(ER, ((3, 2), (1, )))
+    EL_permuted = permute(EL', ((3, 2), (1, )))
 
     AC_map = MPSMPOMPSTransferMatrix(EL_permuted, T, ER_permuted, false)
     AC_init_permuted = ignore_derivatives() do 
         if isnothing(AC_init)
             return nothing
         else
-            return permute(AC_init, (3, 2), (1, )) 
+            return permute(AC_init, ((3, 2), (1, ))) 
         end
     end
 
     AC_permuted = right_env(AC_map; init=AC_init_permuted) 
-    AC = permute(AC_permuted, (3, 2), (1, ))
+    AC = permute(AC_permuted, ((3, 2), (1, )))
 
     # C map
     C_map = MPSMPSTransferMatrix(EL', ER, false)
