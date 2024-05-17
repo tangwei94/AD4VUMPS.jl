@@ -99,6 +99,7 @@ function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, tol=1e-12)
         AC, C = AC1, C1
         print(ix, ' ', conv_meas, "     \r")
     end
+    print("\n")
     return AL, AR, AC, C
 end
 

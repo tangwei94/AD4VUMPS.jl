@@ -83,36 +83,28 @@ end
     @test log(norm(dot(ψ, ϕ))) < 1e-9
 end
 
-@testset "test ad for vumps (partial test)" for ix in 1:10
+@testset "test ad of vumps_for_ad" for ix in 1:10
     T = tensor_square_ising(asinh(1) / 2)
     A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
     AL, AR, AC, C = vumps(A, T)
+
+    O = tensor_square_ising_O(asinh(1) / 2)
     
     function _F1(T)
         AL1, AR1, AC1, C1 = vumps_for_ad(T; AL=AL, AR=AR, AC=AC, C=C)
-        @tensor vl[-1] := AL1[1 -1; 1]
-        return norm(vl) / norm(AL1)
-    end
-    ad1 = _F1'(T)
-    ad2 = _F1'(T)
-    @show norm(ad1), norm(ad2)
-    @test norm(ad1 - ad2) < 1e-8
-   
-    #function _F(T)
-    #    AL, AR, AC, C = vumps(A, T)
-    #    AL1, AR1, AC1, C1 = vumps_for_ad(T; AL=AL, AR=AR, AC=AC, C=C)
-    #    @tensor vl[-1] := AL1[1 -1; 1]
-    #    return norm(vl) / norm(AL1)
-    #end
-    #ad1 = _F'(T)
-    #ad2 = _F'(T)
-    #@show norm(ad1), norm(ad2)
-    #@test norm(ad1 - ad2) < 1e-8
+        TM = MPSMPOMPSTransferMatrix(AL1, T, AL1, false)
+        EL = left_env(TM)
+        ER = right_env(TM)
 
-    #for ix in []
-    #    sX = random_real_symmetric_tensor(2)
-    #    test_ADgrad(_F, T; α=1e-4, tol=1e-4, sX=sX, num=1)
-    #end
+        @tensor a = EL[4; 1 2] * AL1[1 3; 6] * O[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+        @tensor b = EL[4; 1 2] * AL1[1 3; 6] * T[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+        return real(a/b)
+    end
+   
+    for ix in [1]
+        sX = random_real_symmetric_tensor(2)
+        test_ADgrad(_F1, T; α=1e-4, tol=1e-4, sX=sX, num=1)
+    end
 end
 
 #@testset "test ad for vumps" for ix in 1:10
