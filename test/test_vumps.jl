@@ -71,6 +71,18 @@ end
     test_ADgrad(_F, T; α=1e-4, tol=1e-4)
 end
 
+@testset "test vumps" begin 
+    T = tensor_square_ising(asinh(1) / 2)
+    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
+    AL, AR, AC, C = vumps(A, T)
+    ϕ = InfiniteMPS([AL])
+
+    ψi = InfiniteMPS([A])
+    ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS())
+
+    @test log(norm(dot(ψ, ϕ))) < 1e-9
+end
+
 @testset "test ad for vumps (partial test)" for ix in 1:10
     T = tensor_square_ising(asinh(1) / 2)
     A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
