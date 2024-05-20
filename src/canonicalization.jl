@@ -1,7 +1,7 @@
 function right_canonical_QR(A::MPSTensor; tol::Float64=1e-15, maxiter=200, enable_warning=false)
 
-    L, Q = rightorth(permute(A, (1, ), (2, 3)))
-    AR = permute(Q, (1, 2), (3, ))
+    L, Q = rightorth(permute(A, ((1, ), (2, 3))))
+    AR = permute(Q, ((1, 2), (3, )))
     L = L / norm(L)
     δ = norm(L - id(domain(L)[1])) 
     L0 = L
@@ -13,8 +13,8 @@ function right_canonical_QR(A::MPSTensor; tol::Float64=1e-15, maxiter=200, enabl
             L = right_env(lop)' # TODO. tol = max(tol, δ/10)
         end
 
-        L, Q = rightorth(permute(A * L, (1, ), (2, 3)))
-        AR = permute(Q, (1, 2), (3, ))
+        L, Q = rightorth(permute(A * L, ((1, ), (2, 3))))
+        AR = permute(Q, ((1, 2), (3, )))
         L = L / norm(L)
 
         δ = norm(L-L0)
