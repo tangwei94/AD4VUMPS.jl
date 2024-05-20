@@ -23,8 +23,8 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1'
-          - '1.6'
+          - '1' # the latest 1.x stable release
+          #- '1.6'
         os:
           - ubuntu-latest
           - mac-latest
@@ -47,4 +47,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
     env:
-      JULIA_NUM_THREADS: 4
+      JULIA_NUM_THREADS: 3
