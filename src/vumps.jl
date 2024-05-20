@@ -28,12 +28,8 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor)
     ER = right_env(TM_R)
 
     # AC map
-    ER_permuted = permute(ER, ((3, 2), (1, )))
-    EL_permuted = permute(EL', ((3, 2), (1, )))
-
-    AC_map = MPSMPOMPSTransferMatrix(EL_permuted, T, ER_permuted)
-    AC_permuted = right_env(AC_map) 
-    AC = permute(AC_permuted, ((3, 2), (1, )))
+    AC_map = ACMap(EL, T, ER)
+    AC = fixed_point(AC_map)
 
     # C map
     C_map = MPSMPSTransferMatrix(EL', ER)

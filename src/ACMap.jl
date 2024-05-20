@@ -43,8 +43,3 @@ function ChainRulesCore.rrule(::Type{ACMap}, EL::EnvTensorL, T::MPOTensor, ER::E
 end
 
 fixed_point(TM::ACMap) = left_env(TM)
-
-struct CMap{TypeL<:EnvTensorL, TypeR<:EnvTensorR}
-    EL::TypeL
-    ER::TypeR
-end
