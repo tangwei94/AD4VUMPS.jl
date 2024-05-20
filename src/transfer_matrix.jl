@@ -46,19 +46,19 @@ function left_space(TM::MPSMPOMPSTransferMatrix)
     return space_above←space_below*space_middle
 end
 
-function left_transfer(TM::MPSMPSTransferMatrix, v)
+function left_transfer(TM::MPSMPSTransferMatrix, v::AbstractTensorMap)
     @tensor Tv[-1; -2] := TM.below[2 3; -2] * conj(TM.above[1 3; -1]) * v[1; 2]
     return Tv
 end
-function right_transfer(TM::MPSMPSTransferMatrix, v)
+function right_transfer(TM::MPSMPSTransferMatrix, v::AbstractTensorMap)
     @tensor Tv[-1; -2] := TM.below[-1 3; 1] * conj(TM.above[-2 3; 2]) * v[1; 2]
     return Tv
 end
-function left_transfer(TM::MPSMPOMPSTransferMatrix, v)
+function left_transfer(TM::MPSMPOMPSTransferMatrix, v::AbstractTensorMap)
     @tensor Tv[-1; -2 -3] := TM.below[4 5; -2] * TM.middle[2 3; 5 -3] * conj(TM.above[1 3; -1]) * v[1; 4 2]
     return Tv
 end
-function right_transfer(TM::MPSMPOMPSTransferMatrix, v)
+function right_transfer(TM::MPSMPOMPSTransferMatrix, v::AbstractTensorMap)
     @tensor Tv[-1 -2; -3] := TM.below[-1 3 ; 1] * TM.middle[-2 5; 3 2] * conj(TM.above[-3 5; 4]) * v[1 2; 4]
     return Tv
 end

@@ -33,7 +33,7 @@ end
     T = tensor_square_ising(βc)
     
     function _F1(AL1)
-        AC, C = vumps_update(AL1, AR, T; AC_init=AC0, C_init=C0)
+        AC, C = vumps_update(AL1, AR, T)
         return norm(tr(QAC' * AC)) / norm(AC) + norm(tr(C)) / norm(C)
     end
     function _F2(AR1)
@@ -41,13 +41,13 @@ end
         return norm(tr(QAC' * AC)) / norm(AC) + norm(tr(C)) / norm(C)
     end
     function _F3(T1)
-        AC, C = vumps_update(AL, AR, T1; AC_init=AC0)
+        AC, C = vumps_update(AL, AR, T1)
         return norm(tr(QAC' * AC)) / norm(AC) + norm(tr(C)) / norm(C)
     end
   
-    test_ADgrad(_F1, AL; α=1e-4, tol=1e-4)
-    test_ADgrad(_F2, AR; α=1e-4, tol=1e-4)
-    test_ADgrad(_F3, T; α=1e-4, tol=1e-4)
+    test_ADgrad(_F1, AL)
+    test_ADgrad(_F2, AR)
+    test_ADgrad(_F3, T)
 end
 
 @testset "test AD for one vumps step" for ix in 1:10
@@ -68,17 +68,30 @@ end
     end
 
     T = tensor_square_ising(asinh(1) / 2)
-    test_ADgrad(_F, T; α=1e-4, tol=1e-4)
+    test_ADgrad(_F, T)
 end
 
-@testset "test vumps" begin 
+@testset "test vumps" for ix in 1:10 
     T = tensor_square_ising(asinh(1) / 2)
     A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
     AL, AR, AC, C = vumps(A, T)
     ϕ = InfiniteMPS([AL])
 
     ψi = InfiniteMPS([A])
-    ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS())
+    ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS(verbosity=0))
+
+    @test log(norm(dot(ψ, ϕ))) < 1e-9
+end
+
+@testset "test vumps" for ix in 1:10
+    s = random_real_symmetric_tensor(2) 
+    T = tensor_square_ising(asinh(1) / 2) + 0.01 * s
+    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
+    AL, AR, AC, C = vumps(A, T)
+    ϕ = InfiniteMPS([AL])
+
+    ψi = InfiniteMPS([A])
+    ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS(verbosity=0))
 
     @test log(norm(dot(ψ, ϕ))) < 1e-9
 end
