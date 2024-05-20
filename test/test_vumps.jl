@@ -71,24 +71,18 @@ end
     test_ADgrad(_F, T)
 end
 
-@testset "test vumps" for ix in 1:10 
-    T = tensor_square_ising(asinh(1) / 2)
-    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
-    AL, AR, AC, C = vumps(A, T)
-    ϕ = InfiniteMPS([AL])
-
-    ψi = InfiniteMPS([A])
-    ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS(verbosity=0))
-
-    @test log(norm(dot(ψ, ϕ))) < 1e-9
-end
-
-@testset "test vumps" for ix in 1:10
+@testset "test vumps forward" for ix in 1:10
     s = random_real_symmetric_tensor(2) 
-    T = tensor_square_ising(asinh(1) / 2) + 0.01 * s
+    T = tensor_square_ising(asinh(1) / 2) 
+    if ix > 1
+        T = T + rand() * 0.1 * s
+    end
     A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
     AL, AR, AC, C = vumps(A, T)
     ϕ = InfiniteMPS([AL])
+
+    AL, AR, conv_meas = mps_update(AC, C)
+    @test conv_meas < 1e-12
 
     ψi = InfiniteMPS([A])
     ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS(verbosity=0))
@@ -105,7 +99,7 @@ end
     
     function _F1(T)
         AL1, AR1, AC1, C1 = vumps_for_ad(T; AL=AL, AR=AR, AC=AC, C=C)
-        TM = MPSMPOMPSTransferMatrix(AL1, T, AL1, false)
+        TM = MPSMPOMPSTransferMatrix(AL1, T, AL1)
         EL = left_env(TM)
         ER = right_env(TM)
 
@@ -116,7 +110,7 @@ end
    
     for ix in [1]
         sX = random_real_symmetric_tensor(2)
-        test_ADgrad(_F1, T; α=1e-4, tol=1e-4, sX=sX, num=1)
+        test_ADgrad(_F1, T; sX=sX, num=1, tol=1e-7)
     end
 end
 
