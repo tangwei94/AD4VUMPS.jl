@@ -1,22 +1,22 @@
 function mps_update(AC::MPSTensor, C::MPSBondTensor)
-        UAC_l, PAC_l = leftorth(AC; alg=QRpos())
-        UC_l, PC_l = leftorth(C; alg=QRpos())
+    UAC_l, PAC_l = leftorth(AC; alg = QRpos())
+    UC_l, PC_l = leftorth(C; alg = QRpos())
 
-        PAC_r, UAC_r = rightorth(permute(AC, ((1,), (2,3))); alg=LQpos())
-        PC_r, UC_r = rightorth(C; alg=LQpos())
+    PAC_r, UAC_r = rightorth(permute(AC, ((1,), (2, 3))); alg = LQpos())
+    PC_r, UC_r = rightorth(C; alg=LQpos())
 
-        AL = UAC_l * UC_l'
-        AR = permute(UC_r' * UAC_r, ((1, 2), (3,)))
+    AL = UAC_l * UC_l'
+    AR = permute(UC_r' * UAC_r, ((1, 2), (3,)))
 
-        # check AC - AL * C and AC - C * AR
-        conv_meas = ignore_derivatives() do
-            ϵL = norm(PAC_l - PC_l) 
-            ϵR = norm(PAC_r - PC_r)
-            conv_meas = max(ϵL, ϵR)
-            return conv_meas
-        end
+    # check AC - AL * C and AC - C * AR
+    conv_meas = ignore_derivatives() do
+        ϵL = norm(PAC_l - PC_l) 
+        ϵR = norm(PAC_r - PC_r)
+        conv_meas = max(ϵL, ϵR)
+        return conv_meas
+    end
 
-        return AL, AR, conv_meas
+    return AL, AR, conv_meas
 end
 
 function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor; 
@@ -50,39 +50,6 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor;
 
     return AC, C
 end
-
-#function gauge_fixing_L(AL1, AL2)
-#    α, U = ignore_derivatives() do 
-#        Tl = MPSMPSTransferMatrix(AL1, AL2, false)
-#        U = left_env(Tl)
-#        @tensor AL2_new[-1 -2; -3] := U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
-#        
-#        M = similar(AL2_new)
-#        randomize!(M)
-#        α = tr(M' * AL1) / tr(M' * AL2_new)
-#       
-#        return α, U
-#    end
-#
-#    @tensor AL2_new[-1 -2; -3] := α * U[-1; 1] * AL2[1 -2; 2] * U'[2; -3]
-#    return AL2_new
-#end
-#function gauge_fixing_R(AR1, AR2)
-#    α, U = ignore_derivatives() do 
-#        Tr = MPSMPSTransferMatrix(AR1, AR2, false)
-#        U = right_env(Tr)
-#        @tensor AR2_new[-1 -2; -3] := U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
-#        
-#        M = similar(AR2_new)
-#        randomize!(M)
-#        α = tr(M' * AR1) / tr(M' * AR2_new)
-#        
-#        return α, U
-#    end
-#
-#    @tensor AR2_new[-1 -2; -3] := α * U'[-1; 1] * AR2[1 -2; 2] * U[2; -3]
-#    return AR2_new
-#end
 
 function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, tol=1e-12)
     # TODO.: canonical form conversion

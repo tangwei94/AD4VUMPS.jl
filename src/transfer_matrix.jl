@@ -13,7 +13,6 @@ struct MPSMPOMPSTransferMatrix{A<:MPSTensor,B<:MPOTensor,C<:MPSTensor} <:
     below::C
     isflipped::Bool
 end
-#struct MPSMPSTransferMatrixBackward
 
 function TensorKit.flip(TM::MPSMPSTransferMatrix)
     return MPSMPSTransferMatrix(TM.above, TM.below, true)

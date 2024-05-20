@@ -14,6 +14,7 @@ function test_ADgrad(_F, X; α = 1e-4, tol = 1e-7, sX = nothing, num = 10)
             sX = similar(X)
             randomize!(sX)
         end
+        sX = sX / norm(sX)
 
         # finite diff along retraction direction
         ∂α1 = (-_F(X + 2*α * sX) + 8*_F(X + α * sX) - 8*_F(X - α * sX) + _F(X - 2*α * sX)) / (12 * α)
@@ -57,8 +58,10 @@ end
 
 function random_real_symmetric_tensor(d::Int)
     O_dat = rand(Float64, d, d, d, d)
-    O_dat = O_dat + permutedims(O_dat, (2, 1, 4, 3)) + permutedims(O_dat, (3, 4, 1, 2)) + permutedims(O_dat, (4, 3, 2, 1))
+    #O_dat = O_dat + permutedims(O_dat, (2, 1, 4, 3)) + permutedims(O_dat, (3, 4, 1, 2)) + permutedims(O_dat, (4, 3, 2, 1))
     O_dat = O_dat + permutedims(O_dat, (1, 3, 2, 4))
+    O_dat = O_dat / norm(O_dat)
+
     O = TensorMap(O_dat, ℂ^d*ℂ^d, ℂ^d*ℂ^d)
     return O
 end
