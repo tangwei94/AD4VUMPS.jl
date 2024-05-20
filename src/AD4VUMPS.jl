@@ -14,11 +14,12 @@ export AbstractLinearMap, LinearMapBackward, left_transfer, right_transfer
 export MPSMPSTransferMatrix, MPSMPOMPSTransferMatrix
 export ACMap, fixed_point
 export right_env, left_env
-export mps_update, vumps_update, vumps, vumps_for_ad
+export mps_update, vumps_update, vumps
 
 include("utils.jl");
 include("transfer_matrix.jl");
 include("ACMap.jl");
+include("canonicalization.jl");
 include("vumps.jl");
 
 end

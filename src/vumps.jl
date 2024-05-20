@@ -38,35 +38,38 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor)
     return AC, C
 end
 
-function vumps(A::MPSTensor, T::MPOTensor; maxiter=500, tol=1e-12)
-    # TODO.: canonical form conversion
-    sp = domain(A)[1]
-    C = TensorMap(rand, ComplexF64, sp, sp)
-    AL, AR = mps_update(A, C)
+function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, miniter=100, tol=1e-12)
+    AL, AR, AC, C = ignore_derivatives() do
+        sp = domain(A)[1]
+        C = TensorMap(rand, ComplexF64, sp, sp)
+        AL, _ = left_canonical_QR(A)
+        AR, _ = right_canonical_QR(A)
+        AC, C = vumps_update(AL, AR, T)
+        return AL, AR, AC, C
+    end
+
     conv_meas = 999
     ix = 0
-    AC, C = vumps_update(AL, AR, T)
-    while conv_meas > tol && ix < maxiter
+    while conv_meas > tol && ix < maxiter || ix < miniter
         ix += 1
-        AC1, C1 = vumps_update(AL, AR, T)
-        AL, AR, conv_meas = mps_update(AC1, C1)
-        AC, C = AC1, C1
+        AC, C = vumps_update(AL, AR, T)
+        AL, AR, conv_meas = mps_update(AC, C)
         print(ix, ' ', conv_meas, "     \r")
     end
     print("\n")
     return AL, AR, AC, C
 end
 
-@non_differentiable vumps(::MPSTensor, ::MPOTensor) 
-
-function vumps_for_ad(T::MPOTensor; AL::MPSTensor, AR::MPSTensor, AC::MPSTensor, C::MPSBondTensor, maxiter=100)
-    AL1 = ignore_derivatives(AL) 
-    AR1 = ignore_derivatives(AR) 
-    AC1 = ignore_derivatives(AC) 
-    C1 = ignore_derivatives(C) 
-    for _ in 1:maxiter
-        AC1, C1 = vumps_update(AL1, AR1, T)
-        AL1, AR1, _ = mps_update(AC1, C1)
-    end
-    return AL1, AR1, AC1, C1
-end
+#@non_differentiable vumps(::MPSTensor, ::MPOTensor) 
+#
+#function vumps_for_ad(T::MPOTensor; AL::MPSTensor, AR::MPSTensor, AC::MPSTensor, C::MPSBondTensor, maxiter=100)
+#    AL1 = ignore_derivatives(AL) 
+#    AR1 = ignore_derivatives(AR) 
+#    AC1 = ignore_derivatives(AC) 
+#    C1 = ignore_derivatives(C) 
+#    for _ in 1:maxiter
+#        AC1, C1 = vumps_update(AL1, AR1, T)
+#        AL1, AR1, _ = mps_update(AC1, C1)
+#    end
+#    return AL1, AR1, AC1, C1
+#end
