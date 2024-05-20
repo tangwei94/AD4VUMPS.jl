@@ -15,7 +15,7 @@ function right_env_backward(TM::MPSMPSTransferMatrix, λ::Number, vr::RhoTensor,
     
     (norm(dot(vr, ∂vr)) > 1e-9) && @warn "right_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vr." # important
     ∂vr = ∂vr - dot(vr, ∂vr) * vr 
-    ξr, info = linsolve(x -> flip(TM)(x) - λ*x, ∂vr', init') # ξr should live in the space of vl
+    ξr, info = linsolve(x -> left_transfer(TM, x) - λ*x, ∂vr', init') # ξr should live in the space of vl
     (info.converged == 0) && @warn "right_env_backward not converged: normres = $(info.normres)"
     
     return ξr
@@ -28,7 +28,7 @@ function left_env_backward(TM::MPSMPSTransferMatrix, λ::Number, vl::RhoTensor, 
 
     (norm(dot(vl, ∂vl)) > 1e-9) && @warn "left_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vl." # important
     ∂vl = ∂vl - dot(vl, ∂vl) * vl 
-    ξl, info = linsolve(x -> TM(x) - λ*x, ∂vl', init') # ξl should live in the space of vr
+    ξl, info = linsolve(x -> right_transfer(TM, x) - λ*x, ∂vl', init') # ξl should live in the space of vr
     (info.converged == 0) && @warn "left_env_backward not converged: normres = $(info.normres)"
 
     return ξl
@@ -56,7 +56,7 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPSTransferMatrix; init
         space_below = domain(TM.below)[1]
         init = TensorMap(rand, ComplexF64, space_above, space_below)
     end
-    λls, vls, _ = eigsolve(flip(TM), init, 1, :LM)
+    λls, vls, _ = eigsolve(v -> left_transfer(TM, v), init, 1, :LM)
     λl, vl = λls[1], vls[1]
    
     function left_env_pushback(∂vl)
@@ -66,9 +66,9 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPSTransferMatrix; init
     return vl, left_env_pushback
 end
 
-function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::MPSTensor, isflipped::Bool)
+function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::MPSTensor)
 
-    TM = MPSMPSTransferMatrix(Au, Ad, false) # TODO. I should remove isflipped from the struct
+    TM = MPSMPSTransferMatrix(Au, Ad) # TODO. I should remove isflipped from the struct
     
     function TransferMatrix_pushback(∂TM)
         ∂Au = zero(Au)
@@ -79,7 +79,7 @@ function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::M
             ∂Au += ∂Au_j
             ∂Ad += ∂Ad_j
         end
-        return NoTangent(), ∂Au, ∂Ad, NoTangent()
+        return NoTangent(), ∂Au, ∂Ad
     end
     return TM, TransferMatrix_pushback 
 end

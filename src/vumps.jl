@@ -22,8 +22,8 @@ end
 function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor; 
     AC_init::Union{Nothing, MPSTensor}=nothing, C_init::Union{Nothing, MPSBondTensor}=nothing)
 
-    TM_L = MPSMPOMPSTransferMatrix(AL, T, AL, false)
-    TM_R = MPSMPOMPSTransferMatrix(AR, T, AR, false)
+    TM_L = MPSMPOMPSTransferMatrix(AL, T, AL)
+    TM_R = MPSMPOMPSTransferMatrix(AR, T, AR)
 
     EL = left_env(TM_L)
     ER = right_env(TM_R)
@@ -32,7 +32,7 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor;
     ER_permuted = permute(ER, ((3, 2), (1, )))
     EL_permuted = permute(EL', ((3, 2), (1, )))
 
-    AC_map = MPSMPOMPSTransferMatrix(EL_permuted, T, ER_permuted, false)
+    AC_map = MPSMPOMPSTransferMatrix(EL_permuted, T, ER_permuted)
     AC_init_permuted = ignore_derivatives() do 
         if isnothing(AC_init)
             return nothing
@@ -45,7 +45,7 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor;
     AC = permute(AC_permuted, ((3, 2), (1, )))
 
     # C map
-    C_map = MPSMPSTransferMatrix(EL', ER, false)
+    C_map = MPSMPSTransferMatrix(EL', ER)
     C = left_env(C_map; init=C_init) 
 
     return AC, C

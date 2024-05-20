@@ -15,7 +15,7 @@ function right_env_backward(TM::MPSMPOMPSTransferMatrix, λ::Number, vr::EnvTens
     
     (norm(dot(vr, ∂vr)) > 1e-9) && @warn "right_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vr." # important
     ∂vr = ∂vr - dot(vr, ∂vr) * vr 
-    ξr, info = linsolve(x -> flip(TM)(x) - λ*x, ∂vr', init') # subtle
+    ξr, info = linsolve(x -> left_transfer(TM, x) - λ*x, ∂vr', init') # subtle
     (info.converged == 0) && @warn "right_env_backward not converged: normres = $(info.normres)"
     
     return ξr
@@ -28,7 +28,7 @@ function left_env_backward(TM::MPSMPOMPSTransferMatrix, λ::Number, vl::EnvTenso
 
     (norm(dot(vl, ∂vl)) > 1e-9) && @warn "left_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vl." # important
     ∂vl = ∂vl - dot(vl, ∂vl) * vl 
-    ξl, info = linsolve(x -> TM(x) - λ*x, ∂vl', init') # subtle
+    ξl, info = linsolve(x -> right_transfer(TM, x) - λ*x, ∂vl', init') # subtle
     (info.converged == 0) && @warn "left_env_backward not converged: normres = $(info.normres)"
 
     return ξl
@@ -41,7 +41,7 @@ function ChainRulesCore.rrule(::typeof(right_env), TM::MPSMPOMPSTransferMatrix; 
         space_middle = domain(TM.middle)[1]
         init = TensorMap(rand, ComplexF64, space_below*space_middle, space_above)
     end
-    λrs, vrs, _ = eigsolve(TM, init, 1, :LM)
+    λrs, vrs, _ = eigsolve(v -> right_transfer(TM, v), init, 1, :LM)
     λr, vr = λrs[1], vrs[1]
 
     function right_env_pushback(∂vr)
@@ -58,7 +58,7 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::MPSMPOMPSTransferMatrix; i
         space_middle = domain(TM.middle)[1]
         init = TensorMap(rand, ComplexF64, space_above, space_below*space_middle)
     end
-    λls, vls, _ = eigsolve(flip(TM), init, 1, :LM)
+    λls, vls, _ = eigsolve(v -> left_transfer(TM, v), init, 1, :LM)
     λl, vl = λls[1], vls[1]
    
     function left_env_pushback(∂vl)
@@ -70,7 +70,7 @@ end
 
 function ChainRulesCore.rrule(::Type{MPSMPOMPSTransferMatrix}, Au::MPSTensor, M::MPOTensor, Ad::MPSTensor, isflipped::Bool)
 
-    TM = MPSMPOMPSTransferMatrix(Au, M, Ad, false)
+    TM = MPSMPOMPSTransferMatrix(Au, M, Ad)
     
     function TransferMatrix_pushback(∂TM)
         ∂Au = zero(Au)
@@ -84,7 +84,7 @@ function ChainRulesCore.rrule(::Type{MPSMPOMPSTransferMatrix}, Au::MPSTensor, M:
             ∂M += ∂M_j
             ∂Ad += ∂Ad_j
         end
-        return NoTangent(), ∂Au, ∂M, ∂Ad, NoTangent()
+        return NoTangent(), ∂Au, ∂M, ∂Ad
     end
     return TM, TransferMatrix_pushback 
 end
