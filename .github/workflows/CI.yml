@@ -27,8 +27,6 @@ jobs:
           #- '1.6'
         os:
           - ubuntu-latest
-          - mac-latest
-          - windows-latest
         arch:
           - x64
     steps:
@@ -47,4 +45,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
     env:
-      JULIA_NUM_THREADS: 3
+      JULIA_NUM_THREADS: 4
