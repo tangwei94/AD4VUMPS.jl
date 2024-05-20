@@ -26,24 +26,24 @@ Base.:*(bTM::LinearMapBackward, a::Number) = LinearMapBackward(bTM.VLs, a * bTM.
 function right_space(TM::MPSMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
-    return space_below<-space_above
+    return space_below←space_above
 end
 function left_space(TM::MPSMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
-    return space_above<-space_below
+    return space_above←space_below
 end
 function right_space(TM::MPSMPOMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
     space_middle = domain(TM.middle)[1]
-    return space_below*space_middle<-space_above
+    return space_below*space_middle←space_above
 end
 function left_space(TM::MPSMPOMPSTransferMatrix)
     space_above = domain(TM.above)[1]
     space_below = domain(TM.below)[1]
     space_middle = domain(TM.middle)[1]
-    return space_above<-space_below*space_middle
+    return space_above←space_below*space_middle
 end
 
 function left_transfer(TM::MPSMPSTransferMatrix, v)
@@ -142,7 +142,7 @@ function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::M
     return TM, TransferMatrix_pushback 
 end
 
-function ChainRulesCore.rrule(::Type{MPSMPOMPSTransferMatrix}, Au::MPSTensor, M::MPOTensor, Ad::MPSTensor, isflipped::Bool)
+function ChainRulesCore.rrule(::Type{MPSMPOMPSTransferMatrix}, Au::MPSTensor, M::MPOTensor, Ad::MPSTensor)
 
     TM = MPSMPOMPSTransferMatrix(Au, M, Ad)
     

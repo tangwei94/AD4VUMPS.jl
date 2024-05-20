@@ -12,13 +12,11 @@ using JLD2
 export randomize!
 export MPSMPSTransferMatrix, MPSMPOMPSTransferMatrix
 export right_env, left_env
-export MPSMPSTransferMatrixBackward
+export LinearMapBackward
 export mps_update, vumps_update, vumps, vumps_for_ad
 
 include("utils.jl");
 include("transfer_matrix.jl");
-include("mpsmps_transfer_matrix_backward.jl");
-include("mpsmpomps_transfer_matrix_backward.jl");
 include("vumps.jl");
 
 end

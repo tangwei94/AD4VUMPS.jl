@@ -6,7 +6,7 @@ using MPSKit
 using Revise
 using AD4VUMPS
 
-function test_ADgrad(_F, X; α = 1e-4, tol = 1e-7, sX = nothing, num = 10)
+function test_ADgrad(_F, X; α = 1e-4, tol = 1e-8, sX = nothing, num = 10)
 
     # retraction direction
     for i in 1:num
@@ -22,14 +22,11 @@ function test_ADgrad(_F, X; α = 1e-4, tol = 1e-7, sX = nothing, num = 10)
         # test correctness of derivative from AD
         ∂X = _F'(X);
         ∂αad = real(dot(∂X, sX))
-        @test abs(∂α1 - ∂αad) / abs(∂α1) < tol 
-        println("∂α1: ", ∂α1)
-        println("∂αad: ", ∂αad)
-        println("relative err: ", abs(∂α1 - ∂αad) / abs(∂α1))
-        #if !(abs(∂α1 - ∂αad) / abs(∂α1) < tol)
-        #    println("∂α1: ", ∂α1)
-        #    println("∂αad: ", ∂αad)
-        #end
+        @test abs(∂α1 - ∂αad) < tol 
+        if !(abs(∂α1 - ∂αad) < tol)
+            println("∂α1: ", ∂α1)
+            println("∂αad: ", ∂αad)
+        end
     end
 end
 

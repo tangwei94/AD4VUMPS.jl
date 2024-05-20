@@ -8,17 +8,17 @@
     Q = TensorMap(rand, ComplexF64, sp1, sp1*sp2)
 
     function _F1(X)
-        TM1 = MPSMPOMPSTransferMatrix(X, M, X, false)
-        v1 = right_env(TM1; init=A)
+        TM1 = MPSMPOMPSTransferMatrix(X, M, X)
+        v1 = right_env(TM1)
         return norm(tr(Q * v1)) / norm(v1) 
     end
     function _F2(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, M, X, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, M, X)
         v1 = right_env(TM1)
         return norm(tr(Q * v1)) / norm(v1) 
     end
     function _F3(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, X, B, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, X, B)
         v1 = right_env(TM1)
         return norm(tr(Q * v1)) / norm(v1) 
     end
@@ -41,17 +41,17 @@ end
     Q = TensorMap(rand, ComplexF64, sp1*sp2, sp1)
 
     function _F1(X)
-        TM1 = MPSMPOMPSTransferMatrix(X, M, X, false)
+        TM1 = MPSMPOMPSTransferMatrix(X, M, X)
         v1 = left_env(TM1)
         return norm(tr(Q * v1)) / norm(v1) 
     end
     function _F2(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, M, X, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, M, X)
         v1 = left_env(TM1)
         return norm(tr(Q * v1)) / norm(v1) 
     end
     function _F3(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, X, B, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, X, B)
         v1 = left_env(TM1)
         return norm(tr(Q * v1)) / norm(v1) 
     end
@@ -78,32 +78,32 @@ end
     Ql = TensorMap(rand, ComplexF64, spb*sp2, spa)
 
     function _F1(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, X, B, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, X, B)
         v1 = left_env(TM1)
         return norm(tr(Ql * v1)) / norm(v1) 
     end
     function _F2(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, X, B, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, X, B)
         v1 = right_env(TM1)
         return norm(tr(Qr * v1)) / norm(v1) 
     end
     function _Fa1(X)
-        TM1 = MPSMPOMPSTransferMatrix(X, M, B, false)
+        TM1 = MPSMPOMPSTransferMatrix(X, M, B)
         v1 = right_env(TM1)
         return norm(tr(Qr * v1)) / norm(v1) 
     end
     function _Fa2(X)
-        TM1 = MPSMPOMPSTransferMatrix(X, M, B, false)
+        TM1 = MPSMPOMPSTransferMatrix(X, M, B)
         v1 = left_env(TM1)
         return norm(tr(Ql * v1)) / norm(v1) 
     end
     function _Fb1(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, M, X, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, M, X)
         v1 = right_env(TM1)
         return norm(tr(Qr * v1)) / norm(v1) 
     end
     function _Fb2(X)
-        TM1 = MPSMPOMPSTransferMatrix(A, M, X, false)
+        TM1 = MPSMPOMPSTransferMatrix(A, M, X)
         v1 = left_env(TM1)
         return norm(tr(Ql * v1)) / norm(v1) 
     end
