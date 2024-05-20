@@ -2,7 +2,7 @@
 
 julia_version = "1.10.3"
 manifest_format = "2.0"
-project_hash = "c615b5831cec6aef5c4dbc723224288daae49824"
+project_hash = "5982c211a33de4ff200ec0c9d0425377969e9ce5"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -47,6 +47,12 @@ version = "4.0.4"
 
     [deps.Adapt.weakdeps]
     StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+[[deps.Aqua]]
+deps = ["Compat", "Pkg", "Test"]
+git-tree-sha1 = "12e575f31a6f233ba2485ed86b9325b85df37c61"
+uuid = "4c88cf16-eb10-579e-8560-4a9242c79595"
+version = "0.8.7"
 
 [[deps.ArgCheck]]
 git-tree-sha1 = "a3a402a35a2f7e0b87828ccabbd5ebfbebe356b4"
