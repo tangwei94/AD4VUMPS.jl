@@ -43,7 +43,7 @@ function left_canonical_QR(A::TensorMap{ComplexSpace, 2, 1}; tol::Float64=1e-15,
         end
 
         @tensor A_tmp[-1, -2; -3] := R[-1, 1] * A[1, -2, -3]
-        AL, R = leftorth(A_tmp) # TODO. tol = max(tol, δ/10)
+        AL, R = leftorth(A_tmp) 
         R = R / norm(R)
 
         δ = norm(R - R0)
