@@ -288,9 +288,9 @@ uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GPUArrays]]
 deps = ["Adapt", "GPUArraysCore", "LLVM", "LinearAlgebra", "Printf", "Random", "Reexport", "Serialization", "Statistics"]
-git-tree-sha1 = "68e8ff56a4a355a85d2784b94614491f8c900cde"
+git-tree-sha1 = "38cb19b8a3e600e509dc36a6396ac74266d108c1"
 uuid = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
-version = "10.1.0"
+version = "10.1.1"
 
 [[deps.GPUArraysCore]]
 deps = ["Adapt"]
@@ -344,10 +344,10 @@ uuid = "82899510-4779-5014-852e-03e436cf321d"
 version = "1.0.0"
 
 [[deps.JLD2]]
-deps = ["FileIO", "MacroTools", "Mmap", "OrderedCollections", "Pkg", "PrecompileTools", "Printf", "Reexport", "Requires", "TranscodingStreams", "UUIDs"]
-git-tree-sha1 = "dca9ff5abdf5fab4456876bc93f80c59a37b81df"
+deps = ["FileIO", "MacroTools", "Mmap", "OrderedCollections", "Pkg", "PrecompileTools", "Reexport", "Requires", "TranscodingStreams", "UUIDs", "Unicode"]
+git-tree-sha1 = "bdbe8222d2f5703ad6a7019277d149ec6d78c301"
 uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
-version = "0.4.47"
+version = "0.4.48"
 
 [[deps.JLLWrappers]]
 deps = ["Artifacts", "Preferences"]
@@ -369,7 +369,7 @@ version = "0.2.4"
 
 [[deps.KrylovKit]]
 deps = ["ChainRulesCore", "GPUArraysCore", "LinearAlgebra", "Printf", "VectorInterface"]
-git-tree-sha1 = "3f3a92bbe8f568b689a7f7bc193f7c717d793751"
+git-tree-sha1 = "15dc16b58d6f4e48fa80acaf0c4b0a200dd2f22f"
 repo-rev = "master"
 repo-url = "https://github.com/Jutho/KrylovKit.jl.git"
 uuid = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
@@ -377,9 +377,9 @@ version = "0.7.1"
 
 [[deps.LLVM]]
 deps = ["CEnum", "LLVMExtra_jll", "Libdl", "Preferences", "Printf", "Requires", "Unicode"]
-git-tree-sha1 = "839c82932db86740ae729779e610f07a1640be9a"
+git-tree-sha1 = "065c36f95709dd4a676dc6839a35d6fa6f192f24"
 uuid = "929cbde3-209d-540e-8aea-75f648917ca0"
-version = "6.6.3"
+version = "7.1.0"
 
     [deps.LLVM.extensions]
     BFloat16sExt = "BFloat16s"
@@ -475,7 +475,7 @@ version = "0.4.17"
 
 [[deps.MPSKit]]
 deps = ["Accessors", "FLoops", "FastClosures", "FoldsThreads", "KrylovKit", "LinearAlgebra", "LoggingExtras", "OptimKit", "Preferences", "Printf", "RecipesBase", "TensorKit", "TensorKitManifolds", "TensorOperations", "Transducers", "VectorInterface"]
-git-tree-sha1 = "cbb0795ac33bdfcc4a9dc5b711bdd03d371e5f91"
+git-tree-sha1 = "8699dbeefe7370c7fa4f51428c7372de7c73c662"
 repo-rev = "master"
 repo-url = "https://github.com/maartenvd/MPSKit.jl.git"
 uuid = "bb1c41ca-d63c-52ed-829e-0820dda26502"
@@ -774,7 +774,7 @@ version = "0.6.2"
 
 [[deps.TensorOperations]]
 deps = ["LRUCache", "LinearAlgebra", "PackageExtensionCompat", "Strided", "StridedViews", "TupleTools", "VectorInterface"]
-git-tree-sha1 = "0767566d35a97db1f5b3e1f7b90a8788530cba81"
+git-tree-sha1 = "39bf11b0400b1d716418f3faf0fcf8bbd5ea1206"
 repo-rev = "master"
 repo-url = "https://github.com/Jutho/TensorOperations.jl.git"
 uuid = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
