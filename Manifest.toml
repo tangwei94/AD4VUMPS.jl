@@ -2,7 +2,7 @@
 
 julia_version = "1.10.3"
 manifest_format = "2.0"
-project_hash = "5982c211a33de4ff200ec0c9d0425377969e9ce5"
+project_hash = "afb34dcedd8fba161f40cae757567f53a665d432"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -774,9 +774,7 @@ version = "0.6.2"
 
 [[deps.TensorOperations]]
 deps = ["LRUCache", "LinearAlgebra", "PackageExtensionCompat", "Strided", "StridedViews", "TupleTools", "VectorInterface"]
-git-tree-sha1 = "39bf11b0400b1d716418f3faf0fcf8bbd5ea1206"
-repo-rev = "master"
-repo-url = "https://github.com/Jutho/TensorOperations.jl.git"
+git-tree-sha1 = "e450689f53b2a9f8261d899e60977e8561df75a6"
 uuid = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
 version = "4.1.1"
 
