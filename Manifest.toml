@@ -2,7 +2,7 @@
 
 julia_version = "1.10.3"
 manifest_format = "2.0"
-project_hash = "afb34dcedd8fba161f40cae757567f53a665d432"
+project_hash = "b84cd955bb5176033d703c9e340007791f743f87"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -369,9 +369,7 @@ version = "0.2.4"
 
 [[deps.KrylovKit]]
 deps = ["ChainRulesCore", "GPUArraysCore", "LinearAlgebra", "Printf", "VectorInterface"]
-git-tree-sha1 = "15dc16b58d6f4e48fa80acaf0c4b0a200dd2f22f"
-repo-rev = "master"
-repo-url = "https://github.com/Jutho/KrylovKit.jl.git"
+git-tree-sha1 = "3f3a92bbe8f568b689a7f7bc193f7c717d793751"
 uuid = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 version = "0.7.1"
 
