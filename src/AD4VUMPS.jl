@@ -18,6 +18,8 @@ export mps_update, vumps_update, vumps
 
 include("utils.jl");
 include("transfer_matrix.jl");
+include("MPSMPSTransferMatrix.jl");
+include("MPSMPOMPSTransferMatrix.jl");
 include("ACMap.jl");
 include("canonicalization.jl");
 include("vumps.jl");
