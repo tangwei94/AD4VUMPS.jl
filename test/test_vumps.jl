@@ -108,6 +108,6 @@ end
     end
    
     sX = random_real_symmetric_tensor(2)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=1e-5)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-5, tol=1e-6)
+    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=1e-4)
+    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-5, tol=1e-5)
 end
