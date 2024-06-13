@@ -78,7 +78,7 @@ end
         T = T + rand() * 0.1 * s
     end
     A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
-    AL, AR, AC, C = vumps(T; A=A, verbosity=0)
+    AL, AR = vumps(T; A=A, verbosity=0)
     ϕ = InfiniteMPS([AL])
 
     AL, AR, conv_meas = mps_update(AC, C)
@@ -97,7 +97,7 @@ end
     O = tensor_square_ising_O(asinh(1) / 2 / 2)
     
     function _F1(T)
-        AL1, AR1, AC1, C1 = vumps(T; A=A, verbosity=0)
+        AL1, AR1 = vumps(T; A=A, verbosity=0)
         TM = MPSMPOMPSTransferMatrix(AL1, T, AL1)
         EL = left_env(TM)
         ER = right_env(TM)

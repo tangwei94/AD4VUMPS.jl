@@ -57,6 +57,36 @@ function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, miniter=100, tol=1e-12, 
         verbosity > 0 && print(ix, ' ', conv_meas, "     \r")
     end
     verbosity > 0 && print("\n")
-    return AL, AR, AC, C
+    return AL, AR
 end
 
+function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; kwargs...)
+    AL, AR = vumps(T; kwargs...)
+
+    function vumps_pushback(∂AL, ∂AR)
+        _, vumps_iteration_vjp = gauge_fixed_vumps_iteration(AL, AR, T)
+        
+        function vjp_ALAR_ALAR(X)
+            res = vumps_iteration_vjp((X[1], X[2]))
+            return [res[1], res[2]]
+        end
+        vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+        
+        Xj = vjp_ALAR_ALAR([∂AL, ∂AR])
+        Xsum = Xj
+        ϵ = Inf
+        for _ in 1:200
+            Xj = vjp_ALAR_ALAR(Xj)
+            Xsum += Xj
+            ϵnew = norm(Xj)
+            (norm(ϵ - ϵnew) < 1e-10) && break
+            ϵ = ϵnew
+        end
+        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
+        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
+        ∂T = vjp_ALAR_T(Xsum)
+        
+        return NoTangent(), ∂T
+    end
+    return (AL, AR), vumps_pushback
+end
