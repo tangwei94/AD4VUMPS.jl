@@ -14,6 +14,7 @@ export AbstractLinearMap, LinearMapBackward, left_transfer, right_transfer
 export MPSMPSTransferMatrix, MPSMPOMPSTransferMatrix
 export ACMap, fixed_point
 export right_env, left_env
+export gauge_fixing, overall_u1_phase
 export mps_update, vumps_update, vumps
 
 include("utils.jl");

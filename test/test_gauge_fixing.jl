@@ -6,8 +6,8 @@
 
     @tensor AL1[-1 -2; -3] := AL[1 -2; 2] * U'[-1; 1] * U[2; -3]
     
-    U1 = AD4VUMPS.gauge_fixing(AL, AL1)
-    α = AD4VUMPS.overall_u1_phase(U, U1)
+    U1 = gauge_fixing(AL, AL1)
+    α = overall_u1_phase(U, U1)
 
     @test norm(U - U1 * exp(im*α)) < 1e-10
 end 
