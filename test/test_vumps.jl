@@ -81,7 +81,7 @@ end
     AL, AR = vumps(T; A=A, verbosity=0)
     ϕ = InfiniteMPS([AL])
 
-    AC, C = vumps_update(AL, AR)
+    AC, C = vumps_update(AL, AR, T)
     AL, AR, conv_meas = mps_update(AC, C)
     @test conv_meas < 1e-12
 
