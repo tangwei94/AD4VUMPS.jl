@@ -22,6 +22,7 @@ include("MPSMPSTransferMatrix.jl");
 include("MPSMPOMPSTransferMatrix.jl");
 include("ACMap.jl");
 include("canonicalization.jl");
+include("gauge_fixing.jl"); 
 include("vumps.jl");
 
 end
