@@ -60,11 +60,13 @@ function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, miniter=100, tol=1e-12, 
     return AL, AR
 end
 
-function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; kwargs...)
-    AL, AR = vumps(T; kwargs...)
+# https://github.com/QuantumKitHub/PEPSKit.jl/blob/a6afe158c3cb375c75b2f119a2481882bafe866e/src/algorithms/peps_opt.jl#L116-L173
+function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e-12, kwargs...)
+    AL, AR = vumps(T; maxiter=maxiter, tol=tol, kwargs...)
 
-    function vumps_pushback(∂AL, ∂AR)
-        _, vumps_iteration_vjp = gauge_fixed_vumps_iteration(AL, AR, T)
+    function vumps_pushback(∂ALAR)
+        (∂AL, ∂AR) = ∂ALAR
+        _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
         
         function vjp_ALAR_ALAR(X)
             res = vumps_iteration_vjp((X[1], X[2]))
@@ -75,13 +77,17 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; kwargs...)
         Xj = vjp_ALAR_ALAR([∂AL, ∂AR])
         Xsum = Xj
         ϵ = Inf
-        for _ in 1:200
+        for _ in 1:maxiter
             Xj = vjp_ALAR_ALAR(Xj)
             Xsum += Xj
             ϵnew = norm(Xj)
-            (norm(ϵ - ϵnew) < 1e-10) && break
+            # TODO. ϵ itself usually doesn't go to zero
+            (norm(ϵ - ϵnew) < 10*tol) && break
             ϵ = ϵnew
         end
+        ## TODO. linsolve is unstable in my case
+        #Xsum1, info = linsolve(vjp_ALAR_ALAR, X1, X1, 1, -1)
+        #@show Xsum - Xsum1 |> norm
         (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
         (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
         ∂T = vjp_ALAR_T(Xsum)
