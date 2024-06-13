@@ -38,7 +38,7 @@ function vumps_update(AL::MPSTensor, AR::MPSTensor, T::MPOTensor)
     return AC, C
 end
 
-function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, miniter=100, tol=1e-12, verbosity=1)
+function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, tol=1e-12, verbosity=1)
     AL, AR, AC, C = ignore_derivatives() do
         sp = domain(A)[1]
         C = TensorMap(rand, ComplexF64, sp, sp)
@@ -50,7 +50,7 @@ function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, miniter=100, tol=1e-12, 
 
     conv_meas = 999
     ix = 0
-    while conv_meas > tol && ix < maxiter || ix < miniter
+    while conv_meas > tol && ix < maxiter
         ix += 1
         AC, C = vumps_update(AL, AR, T)
         AL, AR, conv_meas = mps_update(AC, C)
