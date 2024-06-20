@@ -40,7 +40,7 @@ function left_env_backward(TM::AbstractLinearMap, λ::Number, vl::AbstractTensor
     randomize!(init); 
     init = init - dot(vl, init) * vl # the subtracted part lives in the null space of TM - λ*I
 
-    (norm(dot(vl, ∂vl)) > 1e-9) && @warn "left_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vl. err=$(norm(dot(vr, ∂vr)))" 
+    (norm(dot(vl, ∂vl)) > 1e-9) && @warn "left_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vl. err=$(norm(dot(vl, ∂vl)))" 
     ∂vl = ∂vl - dot(vl, ∂vl) * vl 
     ξl, info = linsolve(x -> right_transfer(TM, x) - λ*x, ∂vl', init') # ξl should live in the space of vr
     (info.converged == 0) && @warn "left_env_backward not converged: normres = $(info.normres)"
