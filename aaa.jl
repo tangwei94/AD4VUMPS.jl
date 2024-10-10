@@ -52,7 +52,7 @@ function f_map(Y)
 end
 vals, vecs, info = eigsolve(f_map, Y1, 2, :LM; tol=1e-6)
 @show vals
-vals, vecs, info = eigsolve(f_map, Y1, 10, :LM; tol=1e-6) # FIXME. taskfailedexception
+vals, vecs, info = eigsolve(f_map, Y1, 10, :LM; tol=1e-6) 
 @show vals
 for ix in 1:10
     @show vals[ix], vecs[ix][end]
