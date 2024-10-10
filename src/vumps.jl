@@ -64,7 +64,32 @@ end
 function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e-12, kwargs...)
     AL, AR = vumps(T; maxiter=maxiter, tol=tol, kwargs...)
 
-    function vumps_pushback(∂ALAR)
+    function vumps_pushback_arnoldi(∂ALAR)
+        (∂AL, ∂AR) = ∂ALAR
+        _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
+
+        function vjp_ALAR_ALAR(X)
+            res = vumps_iteration_vjp((X[1], X[2]))
+            return [res[1], res[2]]
+        end
+        vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+        X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
+        Y1 = [X1[1], X1[2], 1]
+        @show inner(Y1, Y1)
+        function f_map(Y)
+            Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) 
+            return [Yx[1] + X1[1], Yx[2] + X1[2], Y[3]]
+        end
+        #KrylovKit.VectorInterface.scalartype(a::Vector{Any}) = KrylovKit.VectorInterface.scalartype(a[1])
+        vals, vecs, info = eigsolve(f_map, Y1, 2, :LM)
+        Xsum = [vecs[1][1], vecs[1][2]]
+        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
+        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
+        ∂T = vjp_ALAR_T(Xsum)
+        return NoTangent(), ∂T # FIXME. does not work
+    end
+
+    function vumps_pushback_linsolve(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
         
@@ -73,19 +98,36 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e
             return [res[1], res[2]]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+        X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
+        f_map(X) = X - vjp_ALAR_ALAR(X)
+        Xsum, info = linsolve(f_map, X1, X1; tol= sqrt(tol)) # tol cannot be too small
+        println("vumps_pushback: linsolve info: ", info)
+        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
+        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
+        ∂T = vjp_ALAR_T(Xsum)
         
+        return NoTangent(), ∂T
+    end
+
+    function vumps_pushback_geometric_series(∂ALAR)
+        (∂AL, ∂AR) = ∂ALAR
+        _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
+        
+        function vjp_ALAR_ALAR(X)
+            res = vumps_iteration_vjp((X[1], X[2]))
+            return [res[1], res[2]]
+        end
+        vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
         Xj = vjp_ALAR_ALAR([∂AL, ∂AR])
         Xsum = Xj
         ϵ = Inf
-        for _ in 1:maxiter
+        for ix in 1:maxiter
             Xj = vjp_ALAR_ALAR(Xj)
             Xsum += Xj
-            ϵnew = norm(Xj)
-            # TODO. ϵ itself usually doesn't go to zero
-            (norm(ϵ - ϵnew) < 10*tol) && break
-            ϵ = ϵnew
+            ϵ = norm(Xj)
+            println("INFO vumps_pushback: $(ix) ϵ = ", ϵ)
+            (ϵ < sqrt(tol)) && break # ϵ normally does not go to exact 0. so tol cannot be too small
         end
-        ## TODO. linsolve is unstable in my case
         #Xsum1, info = linsolve(vjp_ALAR_ALAR, X1, X1, 1, -1)
         #@show Xsum - Xsum1 |> norm
         (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
@@ -94,5 +136,6 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback
+    return (AL, AR), vumps_pushback_linsolve
 end
+
