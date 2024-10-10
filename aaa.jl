@@ -39,19 +39,21 @@ X1 = vumps_iteration_vjp(∂ALAR)
     
 function vjp_ALAR_ALAR(X)
     res = vumps_iteration_vjp((X[1], X[2]))
-    return [res[1], res[2]]
+    return (res[1], res[2])
 end
 vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
-Y1 = [X1[1], X1[2], 1]
 
-using VectorInterface
-VectorInterface.scalartype(a::Vector{Any}) = VectorInterface.scalartype(a[1])
-VectorInterface.inner(a::Vector{Any}, b::Vector{Any}) = sum(VectorInterface.inner.(a, b))
+X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
+Y1 = (X1[1], X1[2], 1.0+0.0im)
+
 function f_map(Y)
-    Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) + X1
-    return [Yx[1], Yx[2], Y[3]]
+    Yx = vjp_ALAR_ALAR([Y[1], Y[2]])
+    return (Yx[1] + X1[1], Yx[2] + X1[2], Y[3])
 end
 vals, vecs, info = eigsolve(f_map, Y1, 2, :LM; tol=1e-6)
 @show vals
-vals, vecs, info = eigsolve(f_map, Y1, 3, :LM; tol=1e-6) # FIXME. taskfailedexception
+vals, vecs, info = eigsolve(f_map, Y1, 10, :LM; tol=1e-6) # FIXME. taskfailedexception
+@show vals
+for ix in 1:10
+    @show vals[ix], vecs[ix][end]
+end
