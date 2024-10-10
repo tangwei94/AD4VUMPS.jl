@@ -70,19 +70,17 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e
 
         function vjp_ALAR_ALAR(X)
             res = vumps_iteration_vjp((X[1], X[2]))
-            return [res[1], res[2]]
+            return (res[1], res[2])
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-        X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
-        Y1 = [X1[1], X1[2], 1]
-        @show inner(Y1, Y1)
+        X1 = vjp_ALAR_ALAR((∂AL, ∂AR)) 
+        Y1 = (X1[1], X1[2], 1.0 + 0.0im)
         function f_map(Y)
-            Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) 
-            return [Yx[1] + X1[1], Yx[2] + X1[2], Y[3]]
+            Yx = vjp_ALAR_ALAR((Y[1], Y[2])) 
+            return (Yx[1] + X1[1], Yx[2] + X1[2], Y[3])
         end
-        #KrylovKit.VectorInterface.scalartype(a::Vector{Any}) = KrylovKit.VectorInterface.scalartype(a[1])
         vals, vecs, info = eigsolve(f_map, Y1, 2, :LM)
-        Xsum = [vecs[1][1], vecs[1][2]]
+        Xsum = (vecs[1][1], vecs[1][2])
         (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
         (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
         ∂T = vjp_ALAR_T(Xsum)
