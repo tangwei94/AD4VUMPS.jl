@@ -13,7 +13,6 @@ A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4)
 O = tensor_square_ising_O(asinh(1) / 2 / 2)
 
 AL, AR = vumps(T; A=A, verbosity=1)
-AL1, AR1 = deepcopy(AL), deepcopy(AR)
 
 function vjp_ALAR_ALAR(X)
     res = vumps_iteration_vjp((X[1], X[2]))
@@ -36,41 +35,76 @@ _, ∂ALAR = withgradient(_F1, AL, AR)
 ∂AL, ∂AR = ∂ALAR
 
 vumps_iteration_vjp = pullback(AD4VUMPS.gauge_fixed_vumps_iteration, AL, AR, T)[2]
+vumps_iteration_vjp_2 = pullback(AD4VUMPS.ordinary_vumps_iteration, AL, AR, T)[2]
+AL1, AR1 = AD4VUMPS.ordinary_vumps_iteration(AL, AR, T)
 
 X1 = vumps_iteration_vjp(∂ALAR);
+
+project_dAL! = AD4VUMPS.project_dAL!
+project_dAR = AD4VUMPS.project_dAR
     
+∂AL
+∂AL1 = copy(∂AL)
+∂AL2 = copy(∂AL)
+project_dAL!(∂AL1, AL, :Stiefel)
+project_dAL!(∂AL2, AL1, :Stiefel)
+
+∂AL3 = copy(∂AL)
+∂AL4 = copy(∂AL)
+project_dAL!(∂AL3, AL, :Grassmann)
+project_dAL!(∂AL4, AL1, :Grassmann)
+
+AL - AL1 |> norm
+∂AL1 - ∂AL2 |> norm
+∂AL1 - ∂AL2 |> norm
+∂AL3 - ∂AL4 |> norm
+∂AL1 - ∂AL3 |> norm
+
 function vjp_ALAR_ALAR(X)
-    res = vumps_iteration_vjp((X[1], X[2]))
-    return (res[1], res[2])
+
+    project_dAL!(X[1], AL, :Stiefel)
+    X[2] = project_dAR(X[2], AR, :Stiefel)
+
+    Xo = vumps_iteration_vjp((X[1], X[2]))
+
+    project_dAL!(Xo[1], AL, :Stiefel)
+    Xo2 = project_dAR(Xo[2], AR, :Stiefel)
+
+    return [Xo[1], Xo2]
 end
+function vjp_ALAR_ALAR_2(X)
+
+    project_dAL!(X[1], AL, :Grassmann)
+    X[2] = project_dAR(X[2], AR, :Grassmann)
+
+    Xo = vumps_iteration_vjp_2((X[1], X[2]))
+
+    project_dAL!(Xo[1], AL, :Grassmann)
+    Xo2 = project_dAR(Xo[2], AR, :Grassmann)
+
+    return [Xo[1], Xo2]
+end
+
+X1 = vjp_ALAR_ALAR([∂AL1, ∂AR])
+X2 = vjp_ALAR_ALAR_2([∂AL1, ∂AR])
+X1 - X2 |> norm
+
+vals, vecs, info = eigsolve(vjp_ALAR_ALAR, X1, 2, :LM; tol=1e-6);
+norm.(vals)
+vals, vecs, info = eigsolve(vjp_ALAR_ALAR_2, X1, 2, :LM; tol=1e-6);
+norm.(vals)
+
 vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
 X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
 Y1 = (X1[1], X1[2], 1.0+0.0im)
 
-AR_perm = permute(AR, ((1, ), (2, 3)))'
-y = TensorMap(rand, ComplexF64, (ℂ^2)'*(ℂ^4), ℂ^4)
-
-AR_perm
-
 function f_map(Y)
-    TensorKitManifolds.Stiefel.project!(Y[1], AL)
-
-    AR_perm = permute(AR, ((1, ), (2, 3)))'
-    Y2_perm = permute(Y[2], ((1, ), (2, 3)))'
-    TensorKitManifolds.Stiefel.project!(Y2_perm, AR_perm)
-
-    Yx = vjp_ALAR_ALAR([Y[1], permute(Y2_perm', ((1, 2), (3, )))])
-
-    TensorKitManifolds.Stiefel.project!(Yx[1], AL)
-    Yx2_perm = permute(Yx[2], ((1, ), (2, 3)))'
-    TensorKitManifolds.Stiefel.project!(Yx2_perm, AR_perm)
-
-    #TensorKitManifolds.Stiefel.project!(Yx[1], AL)
-    return (Yx[1] + X1[1], permute(Yx2_perm', ((1, 2), (3, ))) + X1[2], Y[3])
+    Yx = vjp_ALAR_ALAR([Y[1], Y[2]])
+    return (Yx[1] + Y[3] * X1[1], Yx[2] + Y[3] * X1[2], Y[3])
 end
 Y0 = (zero(Y1[1]), zero(Y1[2]), 0.0+0.0im)
-M = zeros(ComplexF64, 65, 65)
+M = zeros(ComplexF64, 65, 65);
 for ix in 1:65
     Yi = deepcopy(Y0)
     if ix <= 32
@@ -89,8 +123,9 @@ end
 λs
 vecs
 
-vals, vecs, info = eigsolve(f_map, Y1, 2, :LR; tol=1e-6)
+vals, vecs, info = eigsolve(f_map, Y1, 1, :LM; tol=1e-6)
 @show vals
+vecs[1][end] 
 for ix in eachindex(vals)
     @show norm(vals[ix]), norm(vecs[ix][end])
 end

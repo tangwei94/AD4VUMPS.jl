@@ -65,3 +65,10 @@ function gauge_fixed_vumps_iteration(AL::MPSTensor, AR::MPSTensor, T::MPOTensor)
 
     return AL1_gauged, AR1_gauged 
 end
+
+function ordinary_vumps_iteration(AL::MPSTensor, AR::MPSTensor, T::MPOTensor)
+    AC1, C1 = vumps_update(AL, AR, T)
+    AL1, AR1, _ = mps_update(AC1, C1)
+
+    return AL1, AR1 
+end
