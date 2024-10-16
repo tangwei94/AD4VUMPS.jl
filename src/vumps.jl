@@ -163,8 +163,8 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
             return (Yx[1] + Y[3] * X1[1], Yx[2] + Y[3] * X1[2], Y[3])
         end
         vals, vecs, info = eigsolve(f_map, Y1, 1, :LR)
-        println("vumps_pushback: Arnoldi leading eigenvalue: ", vals[1])
-        println("vumps_pushback: Arnoldi info: ", info)
+        printstyled("vumps_pushback: Arnoldi leading eigenvalue: $(vals[1]) \n"; color=:light_yellow)
+        printstyled("vumps_pushback: Arnoldi info: $(info) \n"; color=:light_yellow)
         if norm(vecs[1][3]) < 1e-8
             @error "vumps_pushback: Arnoldi backward failed: λ = $(vecs[1][3])"
         end
