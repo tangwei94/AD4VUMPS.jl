@@ -4,43 +4,44 @@ function gauge_fixing(AL1, AL2)
     U, _ = leftorth(σ; alg=QRpos())
     return U
 end
-#@non_differentiable gauge_fixing(args...)
+@non_differentiable gauge_fixing(args...)
 
 function overall_u1_phase(T1::AbstractTensorMap, T2::AbstractTensorMap)
     for (f1, f2) in fusiontrees(T2)
         for ix in 1:length(T2[f1, f2])
             if norm(T2[f1, f2][ix]) > 1e-2
                 return T1[f1, f2][ix] / T2[f1, f2][ix]
+                @show norm(T1[f1, f2][ix] / T2[f1, f2][ix]) 
             end
         end
     end
 end
-function ChainRulesCore.rrule(::typeof(overall_u1_phase), T1::AbstractTensorMap, T2::AbstractTensorMap)
-    info = []
-    for (f1, f2) in fusiontrees(T2)
-        for ix in 1:length(T2[f1, f2])
-            if norm(T2[f1, f2][ix]) > 1e-2
-                fusiontrees = (f1, f2)
-                index = ix
-                α = T1[f1, f2][ix] / T2[f1, f2][ix]
-                push!(info, (fusiontrees, index, α))
-                break
-            end
-        end
-    end
-    fusiontrees, index, α = info[1] 
-
-    function overall_u1_phase_pushback(∂α)
-        ∂T1 = zero(T1)
-        ∂T2 = zero(T2)
-        ∂T1[fusiontrees][index] = ∂α / T2[fusiontrees][index]
-        ∂T2[fusiontrees][index] = -∂α * T1[fusiontrees][index] / T2[fusiontrees][index]^2
-        return NoTangent(), ∂T1, ∂T2
-    end
-
-    return α, overall_u1_phase_pushback
-end
-#@non_differentiable overall_u1_phase(args...)
+#function ChainRulesCore.rrule(::typeof(overall_u1_phase), T1::AbstractTensorMap, T2::AbstractTensorMap)
+#    info = []
+#    for (f1, f2) in fusiontrees(T2)
+#        for ix in 1:length(T2[f1, f2])
+#            if norm(T2[f1, f2][ix]) > 1e-2
+#                fs = (f1, f2)
+#                index = ix
+#                α = T1[f1, f2][ix] / T2[f1, f2][ix]
+#                push!(info, (fs, index, α))
+#                break
+#            end
+#        end
+#    end
+#    fs, index, α = info[1] 
+#
+#    function overall_u1_phase_pushback(∂α)
+#        ∂T1 = zero(T1)
+#        ∂T2 = zero(T2)
+#        ∂T1[fs...][index] = ∂α / T2[fs...][index]
+#        ∂T2[fs...][index] = -∂α * T1[fs...][index] / T2[fs...][index]^2
+#        return NoTangent(), ∂T1, ∂T2
+#    end
+#
+#    return α, overall_u1_phase_pushback
+#end
+@non_differentiable overall_u1_phase(::AbstractTensorMap, ::AbstractTensorMap)
 
 #function diagonalize_C(AL::MPSTensor, AR::MPSTensor, AC::MPSTensor, C::MPSTensor)
 #    U, C1, V = tsvd(C)
