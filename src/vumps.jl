@@ -90,15 +90,28 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=1000, tol=1
     function vumps_pushback_linsolve(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
-        
+
         function vjp_ALAR_ALAR(X)
-            res = vumps_iteration_vjp((X[1], X[2]))
-            return [res[1], res[2]]
+            TensorKitManifolds.Stiefel.project!(X[1], AL)
+            AR_adjoint = permute(AR, ((1, ), (2, 3)))'
+            X2_adjoint = permute(X[2], ((1, ), (2, 3)))'
+            TensorKitManifolds.Stiefel.project!(X2_adjoint, AR_adjoint)
+
+            Xo = vumps_iteration_vjp((X[1], permute(X2_adjoint', ((1, 2), (3, )))))
+
+            TensorKitManifolds.Stiefel.project!(Xo[1], AL)
+            Xo2_adjoint = permute(Xo[2], ((1, ), (2, 3)))'
+            TensorKitManifolds.Stiefel.project!(Xo2_adjoint, AR_adjoint)
+
+            return [Xo[1], permute(Xo2_adjoint', ((1, 2), (3, )))]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-        X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
+
+        ∂AL1, ∂AR1, _ = vumps_iteration_vjp((∂AL, ∂AR))
+        X1 = [∂AL1, ∂AR1]
+
         f_map(X) = X - vjp_ALAR_ALAR(X)
-        Xsum, info = linsolve(f_map, X1, X1; tol= sqrt(tol)) # tol cannot be too small
+        Xsum, info = linsolve(f_map, X1, X1; tol= tol) # tol cannot be too small
         println("vumps_pushback: linsolve info: ", info)
         (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
         (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
@@ -126,6 +139,7 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=1000, tol=1
             return [Xo[1], permute(Xo2_adjoint', ((1, 2), (3, )))]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+
         ∂AL1, ∂AR1, _ = vumps_iteration_vjp((∂AL, ∂AR))
         Xj = [∂AL1, ∂AR1]
         Xsum = Xj
@@ -146,6 +160,6 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=1000, tol=1
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback_geometric_series
+    return (AL, AR), vumps_pushback_linsolve
 end
 
