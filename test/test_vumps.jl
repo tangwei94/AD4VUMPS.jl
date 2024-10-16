@@ -91,7 +91,30 @@ end
     @test log(norm(dot(ψ, ϕ))) < 1e-12
 end
 
-@testset "test ad of vumps" for ix in 1:10
+@testset "test gauge fixed vumps iteration" for ix in 1:10
+    T = tensor_square_ising(asinh(1) / 2)
+    A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
+
+    O = tensor_square_ising_O(asinh(1) / 2 / 2)
+    AL, AR = vumps(T; A=A, verbosity=0)
+    
+    function _F2(T)
+        AL1, AR1 = AD4VUMPS.gauge_fixed_vumps_iteration(AL, AR, T)
+        TM = MPSMPOMPSTransferMatrix(AL1, T, AL1)
+        EL = left_env(TM)
+        ER = right_env(TM)
+
+        @tensor a = EL[4; 1 2] * AL1[1 3; 6] * O[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+        @tensor b = EL[4; 1 2] * AL1[1 3; 6] * T[2 5; 3 8] * conj(AL1[4 5; 7]) * ER[6 8; 7]
+        return real(a/b)
+    end
+   
+    sX = random_real_symmetric_tensor(2)
+    test_ADgrad(_F2, T; sX=sX, num=2, α=1e-4, tol=1e-4)
+    test_ADgrad(_F2, T; sX=sX, num=2, α=1e-5, tol=1e-5)
+end
+
+@testset "test ad of vumps" for ix in 1:1
     T = tensor_square_ising(asinh(1) / 2)
     A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
 
@@ -109,6 +132,6 @@ end
     end
    
     sX = random_real_symmetric_tensor(2)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=1e-4)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-5, tol=1e-5)
+    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=5e-6)
+    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-5, tol=1e-7)
 end

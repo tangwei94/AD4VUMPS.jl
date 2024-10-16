@@ -60,45 +60,147 @@ function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, tol=1e-12, verbosity=1)
     return AL, AR
 end
 
+function project_dAL!(dAL, AL::AbstractTensorMap, manifold::Symbol)
+    if !(dAL isa TensorMap)
+        return dAL
+    end
+    
+    if manifold == :Grassmann
+        TensorKitManifolds.Grassmann.project!(dAL, AL)
+        return dAL 
+    elseif manifold == :Stiefel
+        TensorKitManifolds.Stiefel.project!(dAL, AL)
+        return dAL
+    else
+        error("manifold not supported")
+    end
+end
+function project_dAR(dAR, AR::AbstractTensorMap, manifold::Symbol)
+    if !(dAR isa TensorMap)
+        return dAR
+    end
+
+    if manifold == :Grassmann
+        AR_adjoint = permute(AR, ((1, ), (2, 3)))'
+        dAR_adjoint = permute(dAR, ((1, ), (2, 3)))'
+        TensorKitManifolds.Grassmann.project!(dAR_adjoint, AR_adjoint)
+        return permute(dAR_adjoint', ((1, 2), (3, )))
+    elseif manifold == :Stiefel
+        AR_adjoint = permute(AR, ((1, ), (2, 3)))'
+        dAR_adjoint = permute(dAR, ((1, ), (2, 3)))'
+        TensorKitManifolds.Stiefel.project!(dAR_adjoint, AR_adjoint)
+        return permute(dAR_adjoint', ((1, 2), (3, )))
+    else
+        error("manifold not supported")
+    end
+end
+
 # https://github.com/QuantumKitHub/PEPSKit.jl/blob/a6afe158c3cb375c75b2f119a2481882bafe866e/src/algorithms/peps_opt.jl#L116-L173
-function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e-12, kwargs...)
+function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e-12, kwargs...)
     AL, AR = vumps(T; maxiter=maxiter, tol=tol, kwargs...)
+
+    function vumps_pushback_geometric_series_grassmann(∂ALAR) # does not work
+        (∂AL, ∂AR) = ∂ALAR
+        project_dAL!(∂AL, AL, :Grassmann)
+        ∂AR = project_dAR(∂AR, AR, :Grassmann)
+        _, vumps_iteration_vjp = pullback(ordinary_vumps_iteration, AL, AR, T)
+
+        function vjp_ALAR_ALAR(X)
+            project_dAL!(X[1], AL, :Grassmann)
+            X[2] = project_dAR(X[2], AR, :Grassmann)
+
+            Xo = vumps_iteration_vjp((X[1], X[2]))
+
+            project_dAL!(Xo[1], AL, :Grassmann)
+            Xo2 = project_dAR(Xo[2], AR, :Grassmann)
+
+            return [Xo[1], Xo2]
+        end
+        vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+
+        Xj = vjp_ALAR_ALAR([∂AL, ∂AR])
+        Xsum = deepcopy(Xj)
+        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
+        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
+        
+        ϵ = Inf
+        for ix in 1:maxiter
+            Xj = vjp_ALAR_ALAR(Xj)
+            Xsum += Xj
+            ϵ = norm(Xj)
+            println("INFO vumps_pushback: $(ix) ϵ = ", ϵ)
+            (ϵ < tol) && break 
+        end
+        ∂T = vjp_ALAR_T(Xsum)
+        
+        return NoTangent(), ∂T
+    end
 
     function vumps_pushback_arnoldi(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
+        project_dAL!(∂AL, AL, :Stiefel)
+        ∂AR = project_dAR(∂AR, AR, :Stiefel)
+        
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
 
         function vjp_ALAR_ALAR(X)
-            res = vumps_iteration_vjp((X[1], X[2]))
-            return (res[1], res[2])
+            project_dAL!(X[1], AL, :Stiefel)
+            X[2] = project_dAR(X[2], AR, :Stiefel)
+
+            Xo = vumps_iteration_vjp((X[1], X[2]))
+
+            project_dAL!(Xo[1], AL, :Stiefel)
+            Xo2 = project_dAR(Xo[2], AR, :Stiefel)
+
+            return [Xo[1], Xo2]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-        X1 = vjp_ALAR_ALAR((∂AL, ∂AR)) 
+
+        X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
         Y1 = (X1[1], X1[2], 1.0 + 0.0im)
         function f_map(Y)
-            Yx = vjp_ALAR_ALAR((Y[1], Y[2])) 
-            return (Yx[1] + X1[1], Yx[2] + X1[2], Y[3])
+            Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) 
+            return (Yx[1] + Y[3] * X1[1], Yx[2] + Y[3] * X1[2], Y[3])
         end
-        vals, vecs, info = eigsolve(f_map, Y1, 2, :LM)
-        Xsum = (vecs[1][1], vecs[1][2])
+        vals, vecs, info = eigsolve(f_map, Y1, 1, :LM)
+        println("vumps_pushback: Arnoldi leading eigenvalue: ", vals[1])
+        println("vumps_pushback: Arnoldi info: ", info)
+        if norm(vecs[1][3]) < 1e-8
+            @error "vumps_pushback: Arnoldi backward failed: λ = $(vecs[1][3])"
+        end
+        
+        Xsum = [vecs[1][1] / vecs[1][3] , vecs[1][2] / vecs[1][3]]
         (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
         (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
         ∂T = vjp_ALAR_T(Xsum)
-        return NoTangent(), ∂T # FIXME. does not work
+        return NoTangent(), ∂T 
     end
 
     function vumps_pushback_linsolve(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
-        _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
+        project_dAL!(∂AL, AL, :Stiefel)
+        ∂AR = project_dAR(∂AR, AR, :Stiefel)
         
+        _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
+
         function vjp_ALAR_ALAR(X)
-            res = vumps_iteration_vjp((X[1], X[2]))
-            return [res[1], res[2]]
+            project_dAL!(X[1], AL, :Stiefel)
+            X[2] = project_dAR(X[2], AR, :Stiefel)
+
+            Xo = vumps_iteration_vjp((X[1], X[2]))
+
+            project_dAL!(Xo[1], AL, :Stiefel)
+            Xo2 = project_dAR(Xo[2], AR, :Stiefel)
+
+            return [Xo[1], Xo2]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-        X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
+
+        ∂AL1, ∂AR1, _ = vumps_iteration_vjp((∂AL, ∂AR))
+        X1 = [∂AL1, ∂AR1]
+
         f_map(X) = X - vjp_ALAR_ALAR(X)
-        Xsum, info = linsolve(f_map, X1, X1; tol= sqrt(tol)) # tol cannot be too small
+        Xsum, info = linsolve(f_map, X1, X1; tol= tol) 
         println("vumps_pushback: linsolve info: ", info)
         (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
         (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
@@ -109,31 +211,39 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e
 
     function vumps_pushback_geometric_series(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
+        project_dAL!(∂AL, AL, :Stiefel)
+        ∂AR = project_dAR(∂AR, AR, :Stiefel)
+
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
-        
         function vjp_ALAR_ALAR(X)
-            res = vumps_iteration_vjp((X[1], X[2]))
-            return [res[1], res[2]]
+            project_dAL!(X[1], AL, :Stiefel)
+            X[2] = project_dAR(X[2], AR, :Stiefel)
+    
+            Xo = vumps_iteration_vjp((X[1], X[2]))
+
+            project_dAL!(Xo[1], AL, :Stiefel)
+            Xo2 = project_dAR(Xo[2], AR, :Stiefel)
+
+            return [Xo[1], Xo2]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+
         Xj = vjp_ALAR_ALAR([∂AL, ∂AR])
-        Xsum = Xj
+        Xsum = deepcopy(Xj)
+        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
+        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
         ϵ = Inf
         for ix in 1:maxiter
             Xj = vjp_ALAR_ALAR(Xj)
             Xsum += Xj
             ϵ = norm(Xj)
             println("INFO vumps_pushback: $(ix) ϵ = ", ϵ)
-            (ϵ < sqrt(tol)) && break # ϵ normally does not go to exact 0. so tol cannot be too small
+            (ϵ < tol) && break 
         end
-        #Xsum1, info = linsolve(vjp_ALAR_ALAR, X1, X1, 1, -1)
-        #@show Xsum - Xsum1 |> norm
-        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
-        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
         ∂T = vjp_ALAR_T(Xsum)
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback_linsolve
+    return (AL, AR), vumps_pushback_arnoldi
 end
 
