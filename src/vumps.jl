@@ -61,7 +61,7 @@ function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, tol=1e-12, verbosity=1)
 end
 
 # https://github.com/QuantumKitHub/PEPSKit.jl/blob/a6afe158c3cb375c75b2f119a2481882bafe866e/src/algorithms/peps_opt.jl#L116-L173
-function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e-12, kwargs...)
+function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=1000, tol=1e-12, kwargs...)
     AL, AR = vumps(T; maxiter=maxiter, tol=tol, kwargs...)
 
     function vumps_pushback_arnoldi(∂ALAR)
@@ -112,11 +112,22 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
         
         function vjp_ALAR_ALAR(X)
-            res = vumps_iteration_vjp((X[1], X[2]))
-            return [res[1], res[2]]
+            TensorKitManifolds.Stiefel.project!(X[1], AL)
+            AR_adjoint = permute(AR, ((1, ), (2, 3)))'
+            X2_adjoint = permute(X[2], ((1, ), (2, 3)))'
+            TensorKitManifolds.Stiefel.project!(X2_adjoint, AR_adjoint)
+    
+            Xo = vumps_iteration_vjp((X[1], permute(X2_adjoint', ((1, 2), (3, )))))
+
+            TensorKitManifolds.Stiefel.project!(Xo[1], AL)
+            Xo2_adjoint = permute(Xo[2], ((1, ), (2, 3)))'
+            TensorKitManifolds.Stiefel.project!(Xo2_adjoint, AR_adjoint)
+
+            return [Xo[1], permute(Xo2_adjoint', ((1, 2), (3, )))]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-        Xj = vjp_ALAR_ALAR([∂AL, ∂AR])
+        ∂AL1, ∂AR1, _ = vumps_iteration_vjp((∂AL, ∂AR))
+        Xj = [∂AL1, ∂AR1]
         Xsum = Xj
         ϵ = Inf
         for ix in 1:maxiter
@@ -124,7 +135,8 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e
             Xsum += Xj
             ϵ = norm(Xj)
             println("INFO vumps_pushback: $(ix) ϵ = ", ϵ)
-            (ϵ < sqrt(tol)) && break # ϵ normally does not go to exact 0. so tol cannot be too small
+            (ϵ < tol) && break # ϵ normally does not go to exact 0. so tol cannot be too small # tmp
+            #(ϵ < sqrt(tol)) && break # ϵ normally does not go to exact 0. so tol cannot be too small
         end
         #Xsum1, info = linsolve(vjp_ALAR_ALAR, X1, X1, 1, -1)
         #@show Xsum - Xsum1 |> norm
@@ -134,6 +146,6 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=500, tol=1e
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback_linsolve
+    return (AL, AR), vumps_pushback_geometric_series
 end
 
