@@ -6,7 +6,7 @@ struct DIIS_extrapolation_alg
     damping_factor::Float64 
 end
 
-function DIIS_extrapolation_alg(; M::Int = 10, ΔM::Int = 3, tol::Float64 = 1e-8, max_diis_step::Int = 20, damping_factor::Float64=1e-8) 
+function DIIS_extrapolation_alg(; M::Int = 10, ΔM::Int = 3, tol::Float64 = 1e-8, max_diis_step::Int = 60, damping_factor::Float64=1e-8) 
     return DIIS_extrapolation_alg(M, ΔM, tol, max_diis_step, damping_factor)
 end
 

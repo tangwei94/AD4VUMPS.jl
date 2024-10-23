@@ -229,22 +229,17 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
-        Xj = vjp_ALAR_ALAR([∂AL, ∂AR])
-        Xsum = deepcopy(Xj)
+        X1 = vjp_ALAR_ALAR([∂AL, ∂AR])
+        f_map(X) = vjp_ALAR_ALAR(X) + X1
+        Xsum = iterative_solver(f_map, X1, DIIS_extrapolation_alg(; tol = tol * 10))
+
         (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
         (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
-        ϵ = Inf
-        for ix in 1:maxiter
-            Xj = vjp_ALAR_ALAR(Xj)
-            Xsum += Xj
-            ϵ = norm(Xj)
-            println("INFO vumps_pushback: $(ix) ϵ = ", ϵ)
-            (ϵ < tol) && break 
-        end
+
         ∂T = vjp_ALAR_T(Xsum)
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback_linsolve
+    return (AL, AR), vumps_pushback_geometric_series
 end
 
