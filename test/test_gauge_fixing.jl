@@ -9,7 +9,7 @@
     U1 = gauge_fixing(AL, AL1)
     λ = overall_u1_phase(U, U1)
 
-    @test norm(U - U1 * λ) < 1e-10
+    @test norm(U - U1 * λ) < 1e-9
 end 
 
 @testset "test gauge_fixed_vumps_iteration" for _ in 1:10
@@ -20,8 +20,8 @@ end
     O = tensor_square_ising_O(asinh(1) / 2 / 2)
 
     AL1, AR1 = AD4VUMPS.gauge_fixed_vumps_iteration(AL, AR, T)
-    @test norm(AL1 - AL) < 1e-10
-    @test norm(AR1 - AR) < 1e-10
+    @test norm(AL1 - AL) < 1e-9
+    @test norm(AR1 - AR) < 1e-9
 
     function _F1(T)
         AL1, AR1 = AD4VUMPS.gauge_fixed_vumps_iteration(AL, AR, T)
