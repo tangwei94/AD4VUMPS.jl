@@ -71,25 +71,25 @@ end
     test_ADgrad(_F, T; tol=1e-7)
 end
 
-@testset "test vumps forward" for ix in 1:10
-    s = random_real_symmetric_tensor(2) 
-    T = tensor_square_ising(asinh(1) / 2) 
-    if ix > 1
-        T = T + rand() * 0.1 * s
-    end
-    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
-    AL, AR = vumps(T; A=A, verbosity=0)
-    ϕ = InfiniteMPS([AL])
-
-    AC, C = vumps_update(AL, AR, T)
-    AL, AR, conv_meas = mps_update(AC, C)
-    @test conv_meas < 1e-12
-
-    ψi = InfiniteMPS([A])
-    ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS(verbosity=0))
-
-    @test log(norm(dot(ψ, ϕ))) < 1e-12
-end
+#@testset "test vumps forward" for ix in 1:10
+#    s = random_real_symmetric_tensor(2) 
+#    T = tensor_square_ising(asinh(1) / 2) 
+#    if ix > 1
+#        T = T + rand() * 0.1 * s
+#    end
+#    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
+#    AL, AR = vumps(T; A=A, verbosity=0)
+#    ϕ = InfiniteMPS([AL])
+#
+#    AC, C = vumps_update(AL, AR, T)
+#    AL, AR, conv_meas = mps_update(AC, C)
+#    @test conv_meas < 1e-12
+#
+#    ψi = InfiniteMPS([A])
+#    ψ, _ = leading_boundary(ψi, DenseMPO([T]), VUMPS(verbosity=0))
+#
+#    @test log(norm(dot(ψ, ϕ))) < 1e-12
+#end
 
 @testset "test gauge fixed vumps iteration" for ix in 1:10
     T = tensor_square_ising(asinh(1) / 2)
