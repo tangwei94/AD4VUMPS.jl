@@ -23,7 +23,7 @@ function iterative_solver(_f, Xi, alg::DIIS_extrapolation_alg = DIIS_extrapolati
 
     for _ in 1:M
         Xj, is_converged = iteration_step!(_f, subspace_xjs, subspace_errs, Xj, 0, tol)
-        is_converged && break
+        is_converged && (return Xj)
     end
 
     if max_diis_step > 0
@@ -34,9 +34,8 @@ function iterative_solver(_f, Xi, alg::DIIS_extrapolation_alg = DIIS_extrapolati
             is_converged = false
             for _ in 1:ΔM
                 Xj, is_converged = iteration_step!(_f, subspace_xjs, subspace_errs, Xj, diis_step, tol)
-                is_converged && break
+                is_converged && (return Xj)
             end
-            is_converged && break
             update_ovlpmat!(B, ΔM, subspace_errs; damping_factor=damping_factor)
         end
     end
