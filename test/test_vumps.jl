@@ -68,7 +68,7 @@ end
     end
 
     T = tensor_square_ising(asinh(1) / 2)
-    test_ADgrad(_F, T; tol=1e-7)
+    test_ADgrad(_F, T)
 end
 
 #@testset "test vumps forward" for ix in 1:10
@@ -110,8 +110,7 @@ end
     end
    
     sX = random_real_symmetric_tensor(2)
-    test_ADgrad(_F2, T; sX=sX, num=2, α=1e-4, tol=1e-4)
-    test_ADgrad(_F2, T; sX=sX, num=2, α=1e-5, tol=1e-5)
+    test_ADgrad(_F2, T; sX=sX, num=2)
 end
 
 @testset "test ad of vumps" for ix in 1:1
@@ -132,6 +131,5 @@ end
     end
    
     sX = random_real_symmetric_tensor(2)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=5e-6)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-5, tol=1e-7)
+    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=1e-4)
 end

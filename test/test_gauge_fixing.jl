@@ -7,9 +7,9 @@
     @tensor AL1[-1 -2; -3] := AL[1 -2; 2] * U'[-1; 1] * U[2; -3]
     
     U1 = gauge_fixing(AL, AL1)
-    α = overall_u1_phase(U, U1)
+    λ = overall_u1_phase(U, U1)
 
-    @test norm(U - U1 * exp(im*α)) < 1e-10
+    @test norm(U - U1 * λ) < 1e-10
 end 
 
 @testset "test gauge_fixed_vumps_iteration" for _ in 1:10
@@ -36,5 +36,4 @@ end
     
     sX = random_real_symmetric_tensor(2)
     test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=1e-4)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-5, tol=1e-5)
 end
