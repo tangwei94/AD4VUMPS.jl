@@ -60,17 +60,18 @@ function vumps(T::MPOTensor; A::MPSTensor, maxiter=500, tol=1e-12, verbosity=1)
     return AL, AR
 end
 
-function project_dAL!(dAL, AL::AbstractTensorMap, manifold::Symbol)
+function project_dAL(dAL, AL::AbstractTensorMap, manifold::Symbol)
     if !(dAL isa TensorMap)
         return dAL
     end
-    
+   
+    dAL_copy = deepcopy(dAL)
     if manifold == :Grassmann
-        TensorKitManifolds.Grassmann.project!(dAL, AL)
-        return dAL 
+        TensorKitManifolds.Grassmann.project!(dAL_copy, AL)
+        return dAL_copy
     elseif manifold == :Stiefel
-        TensorKitManifolds.Stiefel.project!(dAL, AL)
-        return dAL
+        TensorKitManifolds.Stiefel.project!(dAL_copy, AL)
+        return dAL_copy
     else
         error("manifold not supported")
     end
@@ -101,20 +102,20 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
 
     function vumps_pushback_geometric_series_grassmann(∂ALAR) # does not work
         (∂AL, ∂AR) = ∂ALAR
-        project_dAL!(∂AL, AL, :Grassmann)
+        ∂AL = project_dAL(∂AL, AL, :Grassmann)
         ∂AR = project_dAR(∂AR, AR, :Grassmann)
         _, vumps_iteration_vjp = pullback(ordinary_vumps_iteration, AL, AR, T)
 
         function vjp_ALAR_ALAR(X)
-            project_dAL!(X[1], AL, :Grassmann)
-            X[2] = project_dAR(X[2], AR, :Grassmann)
+            X1 = project_dAL(X[1], AL, :Grassmann)
+            X2 = project_dAR(X[2], AR, :Grassmann)
 
-            Xo = vumps_iteration_vjp((X[1], X[2]))
+            Xo = vumps_iteration_vjp((X1, X2))
 
-            project_dAL!(Xo[1], AL, :Grassmann)
+            Xo1 = project_dAL(Xo[1], AL, :Grassmann)
             Xo2 = project_dAR(Xo[2], AR, :Grassmann)
 
-            return [Xo[1], Xo2]
+            return [Xo1, Xo2]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
@@ -138,21 +139,21 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
 
     function vumps_pushback_arnoldi(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
-        project_dAL!(∂AL, AL, :Stiefel)
+        ∂AL = project_dAL(∂AL, AL, :Stiefel)
         ∂AR = project_dAR(∂AR, AR, :Stiefel)
         
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
 
         function vjp_ALAR_ALAR(X)
-            project_dAL!(X[1], AL, :Stiefel)
-            X[2] = project_dAR(X[2], AR, :Stiefel)
+            X1 = project_dAL(X[1], AL, :Stiefel)
+            X2 = project_dAR(X[2], AR, :Stiefel)
 
-            Xo = vumps_iteration_vjp((X[1], X[2]))
+            Xo = vumps_iteration_vjp((X1, X2))
 
-            project_dAL!(Xo[1], AL, :Stiefel)
+            Xo1 = project_dAL(Xo[1], AL, :Stiefel)
             Xo2 = project_dAR(Xo[2], AR, :Stiefel)
 
-            return [Xo[1], Xo2]
+            return [Xo1, Xo2]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
@@ -162,7 +163,7 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
             Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) 
             return (Yx[1] + Y[3] * X1[1], Yx[2] + Y[3] * X1[2], Y[3])
         end
-        vals, vecs, info = eigsolve(f_map, Y1, 1, :LR)
+        vals, vecs, info = eigsolve(f_map, Y1, 1, :LM)
         printstyled("vumps_pushback: Arnoldi leading eigenvalue: $(vals[1]) \n"; color=:light_yellow)
         printstyled("vumps_pushback: Arnoldi info: $(info) \n"; color=:light_yellow)
         if norm(vecs[1][3]) < 1e-8
@@ -178,21 +179,21 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
 
     function vumps_pushback_linsolve(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
-        project_dAL!(∂AL, AL, :Stiefel)
+        ∂AL = project_dAL(∂AL, AL, :Stiefel)
         ∂AR = project_dAR(∂AR, AR, :Stiefel)
         
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
 
         function vjp_ALAR_ALAR(X)
-            project_dAL!(X[1], AL, :Stiefel)
-            X[2] = project_dAR(X[2], AR, :Stiefel)
+            X1 = project_dAL(X[1], AL, :Stiefel)
+            X2 = project_dAR(X[2], AR, :Stiefel)
 
-            Xo = vumps_iteration_vjp((X[1], X[2]))
+            Xo = vumps_iteration_vjp((X1, X2))
 
-            project_dAL!(Xo[1], AL, :Stiefel)
+            Xo1 = project_dAL(Xo[1], AL, :Stiefel)
             Xo2 = project_dAR(Xo[2], AR, :Stiefel)
 
-            return [Xo[1], Xo2]
+            return [Xo1, Xo2]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
@@ -211,20 +212,20 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
 
     function vumps_pushback_geometric_series(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
-        project_dAL!(∂AL, AL, :Stiefel)
+        ∂AL = project_dAL(∂AL, AL, :Stiefel)
         ∂AR = project_dAR(∂AR, AR, :Stiefel)
 
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
         function vjp_ALAR_ALAR(X)
-            project_dAL!(X[1], AL, :Stiefel)
-            X[2] = project_dAR(X[2], AR, :Stiefel)
-    
-            Xo = vumps_iteration_vjp((X[1], X[2]))
+            X1 = project_dAL(X[1], AL, :Stiefel)
+            X2 = project_dAR(X[2], AR, :Stiefel)
 
-            project_dAL!(Xo[1], AL, :Stiefel)
+            Xo = vumps_iteration_vjp((X1, X2))
+
+            Xo1 = project_dAL(Xo[1], AL, :Stiefel)
             Xo2 = project_dAR(Xo[2], AR, :Stiefel)
 
-            return [Xo[1], Xo2]
+            return [Xo1, Xo2]
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
