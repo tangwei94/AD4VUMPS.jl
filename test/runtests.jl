@@ -21,9 +21,8 @@ function test_ADgrad(_F, X; α = 1e-4, tol = 1e-8, sX = nothing, num = 10)
         # test correctness of derivative from AD
         ∂X = _F'(X);
         ∂αad = real(dot(∂X, sX))
-        @show abs(∂α1 - ∂αad)
-        @test abs(∂α1 - ∂αad) < tol 
-        if !(abs(∂α1 - ∂αad) < tol)
+        @test abs(∂α1 - ∂αad) / abs(∂αad) < tol 
+        if !(abs(∂α1 - ∂αad) / abs(∂αad) < tol)
             println("∂α1: ", ∂α1)
             println("∂αad: ", ∂αad)
         end
