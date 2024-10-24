@@ -1,7 +1,6 @@
 using LinearAlgebra
 using TensorKit, TensorOperations, KrylovKit
 using ChainRules, ChainRulesCore, Zygote, OptimKit
-using MPSKit
 using TensorKitManifolds
 using Revise
 using AD4VUMPS
@@ -14,6 +13,7 @@ O = tensor_square_ising_O(asinh(1) / 2 / 2)
 
 AL, AR = vumps(T; A=A, verbosity=1)
 
+vumps_iteration_vjp = pullback(AD4VUMPS.gauge_fixed_vumps_iteration, AL, AR, T)[2]
 function vjp_ALAR_ALAR(X)
     res = vumps_iteration_vjp((X[1], X[2]))
     return [res[1], res[2]]
@@ -34,20 +34,18 @@ end
 _, ∂ALAR = withgradient(_F1, AL, AR)
 ∂AL, ∂AR = ∂ALAR
 
-vumps_iteration_vjp = pullback(AD4VUMPS.gauge_fixed_vumps_iteration, AL, AR, T)[2]
-vumps_iteration_vjp_2 = pullback(AD4VUMPS.ordinary_vumps_iteration, AL, AR, T)[2]
 AL1, AR1 = AD4VUMPS.ordinary_vumps_iteration(AL, AR, T)
 
 X1 = vumps_iteration_vjp(∂ALAR);
 
-project_dAL! = AD4VUMPS.project_dAL!
+project_dAL = AD4VUMPS.project_dAL
 project_dAR = AD4VUMPS.project_dAR
     
 ∂AL
 ∂AL1 = copy(∂AL)
 ∂AL2 = copy(∂AL)
-project_dAL!(∂AL1, AL, :Stiefel)
-project_dAL!(∂AL2, AL1, :Stiefel)
+project_dAL(∂AL1, AL, :Stiefel)
+project_dAL(∂AL2, AL1, :Stiefel)
 
 ∂AL3 = copy(∂AL)
 ∂AL4 = copy(∂AL)
@@ -59,40 +57,6 @@ AL - AL1 |> norm
 ∂AL1 - ∂AL2 |> norm
 ∂AL3 - ∂AL4 |> norm
 ∂AL1 - ∂AL3 |> norm
-
-function vjp_ALAR_ALAR(X)
-
-    project_dAL!(X[1], AL, :Stiefel)
-    X[2] = project_dAR(X[2], AR, :Stiefel)
-
-    Xo = vumps_iteration_vjp((X[1], X[2]))
-
-    project_dAL!(Xo[1], AL, :Stiefel)
-    Xo2 = project_dAR(Xo[2], AR, :Stiefel)
-
-    return [Xo[1], Xo2]
-end
-function vjp_ALAR_ALAR_2(X)
-
-    project_dAL!(X[1], AL, :Grassmann)
-    X[2] = project_dAR(X[2], AR, :Grassmann)
-
-    Xo = vumps_iteration_vjp_2((X[1], X[2]))
-
-    project_dAL!(Xo[1], AL, :Grassmann)
-    Xo2 = project_dAR(Xo[2], AR, :Grassmann)
-
-    return [Xo[1], Xo2]
-end
-
-X1 = vjp_ALAR_ALAR([∂AL1, ∂AR])
-X2 = vjp_ALAR_ALAR_2([∂AL1, ∂AR])
-X1 - X2 |> norm
-
-vals, vecs, info = eigsolve(vjp_ALAR_ALAR, X1, 2, :LM; tol=1e-6);
-norm.(vals)
-vals, vecs, info = eigsolve(vjp_ALAR_ALAR_2, X1, 2, :LM; tol=1e-6);
-norm.(vals)
 
 vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
