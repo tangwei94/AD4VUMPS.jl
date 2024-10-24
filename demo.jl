@@ -6,20 +6,39 @@ using Revise
 using AD4VUMPS
 
 # testing the arnoldi method for the vumps pushback
-T = tensor_square_ising(asinh(1) / 2) 
-A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
 
+function tensor_square_ising(β::Real) # tensor for classical Ising model
+    t = TensorMap(ComplexF64[exp(β) exp(-β); exp(-β) exp(β)], ℂ^2, ℂ^2)
+    sqrt_t = sqrt(t)
+    δ = TensorMap(zeros, ComplexF64, ℂ^2*ℂ^2, ℂ^2*ℂ^2)
+
+    δ[1, 1, 1, 1] = 1
+    δ[2, 2, 2, 2] = 1 
+
+    @tensor T[-1 -2 ; -3 -4] := sqrt_t[-1; 1] * sqrt_t[-2; 2] * sqrt_t[3; -3] * sqrt_t[4; -4] * δ[1 2; 3 4]
+    return T
+end
+function tensor_square_ising_O(β::Real) # tensor for an "observable"
+    t = TensorMap(ComplexF64[exp(β) exp(-β); exp(-β) exp(β)], ℂ^2, ℂ^2)
+    sqrt_t = sqrt(t)
+    δ = TensorMap(zeros, ComplexF64, ℂ^2*ℂ^2, ℂ^2*ℂ^2)
+
+    δ.data .= 1
+
+    @tensor T[-1 -2 ; -3 -4] := sqrt_t[-1; 1] * sqrt_t[-2; 2] * sqrt_t[3; -3] * sqrt_t[4; -4] * δ[1 2; 3 4]
+    return T
+end
+
+# tensor 
+T = tensor_square_ising(asinh(1) / 2) 
+# "observable" tensor
 O = tensor_square_ising_O(asinh(1) / 2 / 2)
 
+# MPS local tensor 
+A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
+# VUMPS -> fixed-point AL, AR
 AL, AR = vumps(T; A=A, verbosity=1)
-
-vumps_iteration_vjp = pullback(AD4VUMPS.gauge_fixed_vumps_iteration, AL, AR, T)[2]
-function vjp_ALAR_ALAR(X)
-    res = vumps_iteration_vjp((X[1], X[2]))
-    return [res[1], res[2]]
-end
-vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-
+# cost function 
 function _F1(AL1, AR1)
     TM = MPSMPOMPSTransferMatrix(AL1, T, AL1)
     
@@ -31,70 +50,39 @@ function _F1(AL1, AR1)
     return real(a/b)
 end
 
+# backward of the gauge-fixed VUMPS iteration
+vumps_iteration_vjp = pullback(AD4VUMPS.gauge_fixed_vumps_iteration, AL, AR, T)[2]
+# ∂ALAR -> ∂AL∂AR
+function vjp_ALAR_ALAR(X)
+    res = vumps_iteration_vjp((X[1], X[2]))
+    return [res[1], res[2]]
+end
+# ∂ALAR -> ∂T
+vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+
+# adjoint of AL, AR
 _, ∂ALAR = withgradient(_F1, AL, AR)
 ∂AL, ∂AR = ∂ALAR
 
-AL1, AR1 = AD4VUMPS.ordinary_vumps_iteration(AL, AR, T)
+# one more vumps iteration without gauge fixing. AL1 should be the same as AL up to a gauge transformation
+AL1, AR1 = AD4VUMPS.ordinary_vumps_iteration(AL, AR, T)  
 
 X1 = vumps_iteration_vjp(∂ALAR);
 
 project_dAL = AD4VUMPS.project_dAL
 project_dAR = AD4VUMPS.project_dAR
     
-∂AL
-∂AL1 = copy(∂AL)
-∂AL2 = copy(∂AL)
-project_dAL(∂AL1, AL, :Stiefel)
-project_dAL(∂AL2, AL1, :Stiefel)
+∂AL1 = deepcopy(∂AL)
+∂AL2 = deepcopy(∂AL)
+a = project_dAL(∂AL1, AL, :Stiefel)
+b = project_dAL(∂AL2, AL1, :Stiefel)
 
-∂AL3 = copy(∂AL)
-∂AL4 = copy(∂AL)
-project_dAL!(∂AL3, AL, :Grassmann)
-project_dAL!(∂AL4, AL1, :Grassmann)
+∂AL3 = deepcopy(∂AL)
+∂AL4 = deepcopy(∂AL)
+c = project_dAL(∂AL3, AL, :Grassmann)
+d = project_dAL(∂AL4, AL1, :Grassmann)
 
-AL - AL1 |> norm
-∂AL1 - ∂AL2 |> norm
-∂AL1 - ∂AL2 |> norm
-∂AL3 - ∂AL4 |> norm
-∂AL1 - ∂AL3 |> norm
-
-vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
-
-X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
-Y1 = (X1[1], X1[2], 1.0+0.0im)
-
-function f_map(Y)
-    Yx = vjp_ALAR_ALAR([Y[1], Y[2]])
-    return (Yx[1] + Y[3] * X1[1], Yx[2] + Y[3] * X1[2], Y[3])
-end
-Y0 = (zero(Y1[1]), zero(Y1[2]), 0.0+0.0im)
-M = zeros(ComplexF64, 65, 65);
-for ix in 1:65
-    Yi = deepcopy(Y0)
-    if ix <= 32
-        Yi[1][ix] = 1.0
-    elseif ix <= 64
-        Yi[2][ix - 32] = 1.0
-    else
-        Yi = (Y0[1], Y0[2], 1.0+0.0im)
-    end
-
-    Yo = f_map(Yi)
-    TensorKitManifolds.Stiefel.project!(Yo[1], AL)
-    M[:, ix] = [vec(Yo[1].data); vec(Yo[2].data); Yo[3]]
-end
-λs, vecs = eigen(M)
-λs
-vecs
-
-vals, vecs, info = eigsolve(f_map, Y1, 1, :LM; tol=1e-6)
-@show vals
-vecs[1][end] 
-for ix in eachindex(vals)
-    @show norm(vals[ix]), norm(vecs[ix][end])
-end
-vals, vecs, info = eigsolve(f_map, Y1, 10, :LR; tol=1e-6) 
-@show vals
-for ix in 1:10
-    @show norm(vals[ix]), norm(vecs[ix][end])
-end
+@show a - b |> norm
+@show c - d |> norm
+@show a - c |> norm
+@show b - d |> norm
