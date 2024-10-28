@@ -27,7 +27,8 @@ function right_env_backward(TM::AbstractLinearMap, λ::Number, vr::AbstractTenso
     randomize!(init); 
     init = init - dot(vr, init) * vr # the subtracted part lives in the null space of flip(TM) - λ*I
     
-    (norm(dot(vr, ∂vr)) > 1e-9) && @warn "right_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vr. err=$(norm(dot(vr, ∂vr)))" 
+    err = norm(dot(vr, ∂vr))
+    (err > 1e-9 * max(1, norm(∂vr))) && @warn "right_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vr. err=$err" 
     ∂vr = ∂vr - dot(vr, ∂vr) * vr 
     ξr, info = linsolve(x -> left_transfer(TM, x) - λ*x, ∂vr', init') # ξr should live in the space of vl
     (info.converged == 0) && @warn "right_env_backward not converged: normres = $(info.normres)"
@@ -40,7 +41,8 @@ function left_env_backward(TM::AbstractLinearMap, λ::Number, vl::AbstractTensor
     randomize!(init); 
     init = init - dot(vl, init) * vl # the subtracted part lives in the null space of TM - λ*I
 
-    (norm(dot(vl, ∂vl)) > 1e-9) && @warn "left_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vl. err=$(norm(dot(vl, ∂vl)))" 
+    err = norm(dot(vl, ∂vl))
+    (err > 1e-9 * max(1, norm(∂vl))) && @warn "left_env_backward: forward computation not gauge invariant: final computation should not depend on the phase of vl. err=$err" 
     ∂vl = ∂vl - dot(vl, ∂vl) * vl 
     ξl, info = linsolve(x -> right_transfer(TM, x) - λ*x, ∂vl', init') # ξl should live in the space of vr
     (info.converged == 0) && @warn "left_env_backward not converged: normres = $(info.normres)"
