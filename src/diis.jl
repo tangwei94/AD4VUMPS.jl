@@ -25,6 +25,7 @@ function iterative_solver(_f, Xi, alg::DIIS_extrapolation_alg = DIIS_extrapolati
         Xj, is_converged = iteration_step!(_f, subspace_xjs, subspace_errs, Xj, 0, tol)
         is_converged && (return Xj)
     end
+    init_err = norm(subspace_errs[1])
 
     if max_diis_step > 0
         B = initialize_ovlpmat(subspace_errs; damping_factor=damping_factor)
@@ -33,7 +34,7 @@ function iterative_solver(_f, Xi, alg::DIIS_extrapolation_alg = DIIS_extrapolati
             Xj = _f(Xj)
             is_converged = false
             for _ in 1:ΔM
-                Xj, is_converged = iteration_step!(_f, subspace_xjs, subspace_errs, Xj, diis_step, tol)
+                Xj, is_converged = iteration_step!(_f, subspace_xjs, subspace_errs, Xj, diis_step, tol; init_err=init_err)
                 is_converged && (return Xj)
             end
             update_ovlpmat!(B, ΔM, subspace_errs; damping_factor=damping_factor)
@@ -42,7 +43,7 @@ function iterative_solver(_f, Xi, alg::DIIS_extrapolation_alg = DIIS_extrapolati
     return Xj
 end
 
-function iteration_step!(_f, subspace_xjs::AbstractVector, subspace_errs::AbstractVector, Xj, diis_step::Int, tol::Float64)
+function iteration_step!(_f, subspace_xjs::AbstractVector, subspace_errs::AbstractVector, Xj, diis_step::Int, tol::Float64; init_err::Float64 = 0.0)
         push!(subspace_xjs, Xj)
         (diis_step > 0) && popfirst!(subspace_xjs)
 
@@ -55,7 +56,7 @@ function iteration_step!(_f, subspace_xjs::AbstractVector, subspace_errs::Abstra
         Xj = Xj1
         norm_err = norm(err)
         printstyled("[DIIS step $(diis_step)]: err=$(norm_err) \n"; color=:light_yellow)
-        is_converged = (norm_err < tol)
+        is_converged = (norm_err < tol * max(1, init_err))
         if is_converged
             printstyled("geometric series converged\n"; color=:light_yellow)
         end
