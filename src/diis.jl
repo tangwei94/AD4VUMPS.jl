@@ -63,12 +63,16 @@ function iteration_step!(_f, subspace_xjs::AbstractVector, subspace_errs::Abstra
         return Xj, is_converged
 end
 
-function initialize_ovlpmat(subspace_errs::AbstractVector; damping_factor::Float64=0.0)
+function real_inner(x::AbstractVector, y::AbstractVector)
+    return real(VectorInterface.inner(x, y))
+end
+
+function initialize_ovlpmat(subspace_errs::AbstractVector; damping_factor::Float64=0.0, inner=real_inner)
     M = length(subspace_errs)
     B = zeros(ComplexF64, (M+1, M+1))
     for ix in 1:M
         for iy in 1:M
-            B[ix, iy] = VectorInterface.inner(subspace_errs[ix], subspace_errs[iy])
+            B[ix, iy] = inner(subspace_errs[ix], subspace_errs[iy])
         end
     end
     B[1:M, M+1] .= 1
@@ -77,12 +81,12 @@ function initialize_ovlpmat(subspace_errs::AbstractVector; damping_factor::Float
     return B
 end
 
-function update_ovlpmat!(B::Matrix{<:Number}, ΔM::Int, subspace_errs::AbstractVector; damping_factor::Float64=0.0)
+function update_ovlpmat!(B::Matrix{<:Number}, ΔM::Int, subspace_errs::AbstractVector; damping_factor::Float64=0.0, inner=real_inner)
     M = size(B)[1] - 1
     B[1:M-ΔM, 1:M-ΔM] .= B[ΔM+1:end-1, ΔM+1:end-1]
     for ix in M-ΔM+1:M 
         for iy in 1:ix
-            B[ix, iy] = VectorInterface.inner(subspace_errs[ix], subspace_errs[iy])
+            B[ix, iy] = inner(subspace_errs[ix], subspace_errs[iy])
             B[iy, ix] = B[ix, iy]'
             (ix == iy) && (B[ix, iy] *= (1+damping_factor))
         end
