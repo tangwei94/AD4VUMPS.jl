@@ -28,7 +28,7 @@ function right_canonical_QR(A::MPSTensor; tol::Float64=1e-15, maxiter=200, enabl
     return AR, L0'
 end
 
-function left_canonical_QR(A::TensorMap{ComplexSpace, 2, 1}; tol::Float64=1e-15, maxiter=200, enable_warning=false)
+function left_canonical_QR(A::TensorMap{T, ComplexSpace, 2, 1}; tol::Float64=1e-15, maxiter=200, enable_warning=false) where T
 
     AL, R = leftorth(A)
     R = R / norm(R)
