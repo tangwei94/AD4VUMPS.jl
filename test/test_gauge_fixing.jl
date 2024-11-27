@@ -1,7 +1,7 @@
 @testset "test gauge_fixing" for _ in 1:10
-    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6)
+    A = rand(ComplexF64, ℂ^6*ℂ^2, ℂ^6)
     AL, _ = leftorth(A)
-    M = TensorMap(rand, ComplexF64, ℂ^6, ℂ^6)
+    M = rand(ComplexF64, ℂ^6, ℂ^6)
     U, _ = leftorth(M)
 
     @tensor AL1[-1 -2; -3] := AL[1 -2; 2] * U'[-1; 1] * U[2; -3]
@@ -15,7 +15,7 @@ end
 @testset "test gauge_fixed_vumps_iteration" for _ in 1:10
     s = random_real_symmetric_tensor(2) 
     T = tensor_square_ising(asinh(1) / 2) 
-    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
+    A = rand(ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
     AL, AR = vumps(T; A=A, verbosity=0)
     O = tensor_square_ising_O(asinh(1) / 2 / 2)
 

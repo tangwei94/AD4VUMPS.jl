@@ -3,8 +3,8 @@
     sp2 = ℂ^2;
 
     T = tensor_square_ising(asinh(1) / 2) + 0.01 * random_real_symmetric_tensor(2)
-    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1)
-    C = TensorMap(rand, ComplexF64, sp1, sp1)
+    A = rand(ComplexF64, sp1*sp2, sp1)
+    C = rand(ComplexF64, sp1, sp1)
     AL, AR = mps_update(A, C) 
 
     TM_L = MPSMPOMPSTransferMatrix(AL, T, AL)
@@ -23,8 +23,8 @@ end
     sp2 = ℂ^2;
 
     T = tensor_square_ising(asinh(1) / 2) + 0.01 * random_real_symmetric_tensor(2)
-    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1)
-    C = TensorMap(rand, ComplexF64, sp1, sp1)
+    A = rand(ComplexF64, sp1*sp2, sp1)
+    C = rand(ComplexF64, sp1, sp1)
     AL, AR = mps_update(A, C) 
 
     TM_L = MPSMPOMPSTransferMatrix(AL, T, AL)

@@ -1,9 +1,9 @@
 @testset "test backward for right_env" for ix in 1:10
     sp1 = ℂ^12;
     sp2 = ℂ^3;
-    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    vinit = TensorMap(rand, ComplexF64, sp1, sp1);
+    A = rand(ComplexF64, sp1*sp2, sp1);
+    B = rand(ComplexF64, sp1*sp2, sp1);
+    vinit = rand(ComplexF64, sp1, sp1);
 
     function _F1(X)
         TM1 = MPSMPSTransferMatrix(X, X)
@@ -33,8 +33,8 @@ end
 @testset "test backward for left_env" for ix in 1:10
     sp1 = ℂ^12;
     sp2 = ℂ^3;
-    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+    A = rand(ComplexF64, sp1*sp2, sp1);
+    B = rand(ComplexF64, sp1*sp2, sp1);
 
     function _F1(X)
         TM1 = MPSMPSTransferMatrix(X, X)
@@ -65,8 +65,8 @@ end
     spa = ℂ^8;
     spb = ℂ^12;
     sp2 = ℂ^3;
-    A = TensorMap(rand, ComplexF64, spa*sp2, spa);
-    B = TensorMap(rand, ComplexF64, spb*sp2, spb);
+    A = rand(ComplexF64, spa*sp2, spa);
+    B = rand(ComplexF64, spb*sp2, spb);
 
     function _F1(X)
         TM1 = MPSMPSTransferMatrix(X, X)

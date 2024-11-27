@@ -12,12 +12,12 @@ Base.:*(a::Number, bTM::LinearMapBackward) = LinearMapBackward(bTM.VLs, a * bTM.
 Base.:*(bTM::LinearMapBackward, a::Number) = LinearMapBackward(bTM.VLs, a * bTM.VRs)
 
 function right_env(TM::AbstractLinearMap)
-    init = TensorMap(rand, ComplexF64, right_space(TM))
+    init = rand(ComplexF64, right_space(TM))
     _, ρrs, _ = eigsolve(v -> right_transfer(TM, v), init, 1, :LM)
     return ρrs[1]
 end
 function left_env(TM::AbstractLinearMap)
-    init = TensorMap(rand, ComplexF64, left_space(TM))
+    init = rand(ComplexF64, left_space(TM))
     _, ρls, _ = eigsolve(v -> left_transfer(TM, v), init, 1, :LM)
     return ρls[1]
 end
@@ -53,7 +53,7 @@ function left_env_backward(TM::AbstractLinearMap, λ::Number, vl::AbstractTensor
 end
 
 function ChainRulesCore.rrule(::typeof(right_env), TM::AbstractLinearMap)
-    init = TensorMap(rand, ComplexF64, right_space(TM))
+    init = rand(ComplexF64, right_space(TM))
     λrs, vrs, _ = eigsolve(v -> right_transfer(TM, v), init, 1, :LM)
     λr, vr = λrs[1], vrs[1]
 
@@ -65,7 +65,7 @@ function ChainRulesCore.rrule(::typeof(right_env), TM::AbstractLinearMap)
 end
 
 function ChainRulesCore.rrule(::typeof(left_env), TM::AbstractLinearMap)
-    init = TensorMap(rand, ComplexF64, left_space(TM))
+    init = rand(ComplexF64, left_space(TM))
     λls, vls, _ = eigsolve(v -> left_transfer(TM, v), init, 1, :LM)
     λl, vl = λls[1], vls[1]
    

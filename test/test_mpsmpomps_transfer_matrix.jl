@@ -1,11 +1,11 @@
 @testset "test backward for right_env" for ix in 1:10
     sp1 = ℂ^12;
     sp2 = ℂ^3;
-    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    M = TensorMap(rand, ComplexF64, sp2*sp2, sp2*sp2);
+    A = rand(ComplexF64, sp1*sp2, sp1);
+    B = rand(ComplexF64, sp1*sp2, sp1);
+    M = rand(ComplexF64, sp2*sp2, sp2*sp2);
 
-    Q = TensorMap(rand, ComplexF64, sp1, sp1*sp2)
+    Q = rand(ComplexF64, sp1, sp1*sp2)
 
     function _F1(X)
         TM1 = MPSMPOMPSTransferMatrix(X, M, X)
@@ -34,11 +34,11 @@ end
     sp1 = ℂ^12;
     sp2 = ℂ^3;
 
-    A = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    B = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    M = TensorMap(rand, ComplexF64, sp2*sp2, sp2*sp2);
+    A = rand(ComplexF64, sp1*sp2, sp1);
+    B = rand(ComplexF64, sp1*sp2, sp1);
+    M = rand(ComplexF64, sp2*sp2, sp2*sp2);
 
-    Q = TensorMap(rand, ComplexF64, sp1*sp2, sp1)
+    Q = rand(ComplexF64, sp1*sp2, sp1)
 
     function _F1(X)
         TM1 = MPSMPOMPSTransferMatrix(X, M, X)
@@ -68,14 +68,14 @@ end
     spb = ℂ^8;
     sp2 = ℂ^3;
 
-    A = TensorMap(rand, ComplexF64, spa*sp2, spa);
-    A1 = TensorMap(rand, ComplexF64, spa*sp2, spa);
-    B = TensorMap(rand, ComplexF64, spb*sp2, spb);
-    B1 = TensorMap(rand, ComplexF64, spb*sp2, spb);
-    M = TensorMap(rand, ComplexF64, sp2*sp2, sp2*sp2);
+    A = rand(ComplexF64, spa*sp2, spa);
+    A1 = rand(ComplexF64, spa*sp2, spa);
+    B = rand(ComplexF64, spb*sp2, spb);
+    B1 = rand(ComplexF64, spb*sp2, spb);
+    M = rand(ComplexF64, sp2*sp2, sp2*sp2);
 
-    Qr = TensorMap(rand, ComplexF64, spa, spb*sp2)
-    Ql = TensorMap(rand, ComplexF64, spb*sp2, spa)
+    Qr = rand(ComplexF64, spa, spb*sp2)
+    Ql = rand(ComplexF64, spb*sp2, spa)
 
     function _F1(X)
         TM1 = MPSMPOMPSTransferMatrix(A, X, B)

@@ -35,7 +35,7 @@ T = tensor_square_ising(asinh(1) / 2)
 O = tensor_square_ising_O(asinh(1) / 2 / 2)
 
 # MPS local tensor 
-A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
+A = rand(ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
 # VUMPS -> fixed-point AL, AR
 AL, AR = vumps(T; A=A, verbosity=1)
 # cost function 

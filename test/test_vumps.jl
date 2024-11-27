@@ -2,9 +2,9 @@
     sp1 = ℂ^4;
     sp2 = ℂ^2;
 
-    AC = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    C = TensorMap(rand, ComplexF64, sp1, sp1);
-    QAC = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
+    AC = rand(ComplexF64, sp1*sp2, sp1);
+    C = rand(ComplexF64, sp1, sp1);
+    QAC = rand(ComplexF64, sp1*sp2, sp1);
 
     function _F1(C1)
         AL, AR, _ = mps_update(AC, C1)
@@ -23,11 +23,11 @@ end
     sp1 = ℂ^4;
     sp2 = ℂ^2;
 
-    AC0 = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    C0 = TensorMap(rand, ComplexF64, sp1, sp1);
+    AC0 = rand(ComplexF64, sp1*sp2, sp1);
+    C0 = rand(ComplexF64, sp1, sp1);
     AL, AR, _ = mps_update(AC0, C0);
-    QAC = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    QC = TensorMap(rand, ComplexF64, sp1, sp1);
+    QAC = rand(ComplexF64, sp1*sp2, sp1);
+    QC = rand(ComplexF64, sp1, sp1);
 
     βc = asinh(1) / 2
     T = tensor_square_ising(βc)
@@ -55,8 +55,8 @@ end
     sp1 = ℂ^4;
     sp2 = ℂ^2;
 
-    AC0 = TensorMap(rand, ComplexF64, sp1*sp2, sp1);
-    C0 = TensorMap(rand, ComplexF64, sp1, sp1);
+    AC0 = rand(ComplexF64, sp1*sp2, sp1);
+    C0 = rand(ComplexF64, sp1, sp1);
     AL, AR, _ = mps_update(AC0, C0);
 
     function _F(T; AL1=AL, AR1=AR)
@@ -77,7 +77,7 @@ end
 #    if ix > 1
 #        T = T + rand() * 0.1 * s
 #    end
-#    A = TensorMap(rand, ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
+#    A = rand(ComplexF64, ℂ^6*ℂ^2, ℂ^6) 
 #    AL, AR = vumps(T; A=A, verbosity=0)
 #    ϕ = InfiniteMPS([AL])
 #
@@ -93,7 +93,7 @@ end
 
 @testset "test gauge fixed vumps iteration" for ix in 1:10
     T = tensor_square_ising(asinh(1) / 2)
-    A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
+    A = rand(ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
 
     O = tensor_square_ising_O(asinh(1) / 2 / 2)
     AL, AR = vumps(T; A=A, verbosity=0)
@@ -115,7 +115,7 @@ end
 
 @testset "test ad of vumps" for ix in 1:1
     T = tensor_square_ising(asinh(1) / 2)
-    A = TensorMap(rand, ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
+    A = rand(ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
 
     O = tensor_square_ising_O(asinh(1) / 2 / 2)
     
