@@ -100,11 +100,11 @@ end
 function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e-12, kwargs...)
     AL, AR = vumps(T; maxiter=maxiter, tol=tol, kwargs...)
 
-    function vumps_pushback_geometric_series_grassmann(∂ALAR) # does not work
+    function vumps_pushback_geometric_series_grassmann(∂ALAR)
         (∂AL, ∂AR) = ∂ALAR
         ∂AL = project_dAL(∂AL, AL, :Grassmann)
         ∂AR = project_dAR(∂AR, AR, :Grassmann)
-        _, vumps_iteration_vjp = pullback(ordinary_vumps_iteration, AL, AR, T)
+        _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
 
         function vjp_ALAR_ALAR(X)
             Xi1 = project_dAL(X[1], AL, :Grassmann)
