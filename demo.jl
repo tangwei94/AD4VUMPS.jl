@@ -10,7 +10,7 @@ using AD4VUMPS
 function tensor_square_ising(β::Real) # tensor for classical Ising model
     t = TensorMap(ComplexF64[exp(β) exp(-β); exp(-β) exp(β)], ℂ^2, ℂ^2)
     sqrt_t = sqrt(t)
-    δ = TensorMap(zeros, ComplexF64, ℂ^2*ℂ^2, ℂ^2*ℂ^2)
+    δ = zeros(ComplexF64, ℂ^2*ℂ^2, ℂ^2*ℂ^2)
 
     δ[1, 1, 1, 1] = 1
     δ[2, 2, 2, 2] = 1 
@@ -21,7 +21,7 @@ end
 function tensor_square_ising_O(β::Real) # tensor for an "observable"
     t = TensorMap(ComplexF64[exp(β) exp(-β); exp(-β) exp(β)], ℂ^2, ℂ^2)
     sqrt_t = sqrt(t)
-    δ = TensorMap(zeros, ComplexF64, ℂ^2*ℂ^2, ℂ^2*ℂ^2)
+    δ = zeros(ComplexF64, ℂ^2*ℂ^2, ℂ^2*ℂ^2)
 
     δ.data .= 1
 

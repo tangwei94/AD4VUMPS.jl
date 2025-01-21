@@ -31,7 +31,8 @@ function ChainRulesCore.rrule(::Type{MPSMPOMPSTransferMatrix}, Au::MPSTensor, M:
 
     TM = MPSMPOMPSTransferMatrix(Au, M, Ad)
     
-    function TransferMatrix_pushback(∂TM)
+    function TransferMatrix_pushback(_∂TM)
+        ∂TM = unthunk(_∂TM)
         ∂Au = zero(Au)
         ∂M = zero(M)
         ∂Ad = zero(Ad)

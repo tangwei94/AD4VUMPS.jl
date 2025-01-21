@@ -28,7 +28,8 @@ function ChainRulesCore.rrule(::Type{MPSMPSTransferMatrix}, Au::MPSTensor, Ad::M
 
     TM = MPSMPSTransferMatrix(Au, Ad) 
     
-    function TransferMatrix_pushback(∂TM)
+    function TransferMatrix_pushback(_∂TM)
+        ∂TM = unthunk(_∂TM)
         ∂Au = zero(Au)
         ∂Ad = zero(Ad)
         for (VL, VR) in zip(∂TM.VLs, ∂TM.VRs)

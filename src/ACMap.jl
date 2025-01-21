@@ -25,7 +25,8 @@ end
 function ChainRulesCore.rrule(::Type{ACMap}, EL::EnvTensorL, T::MPOTensor, ER::EnvTensorR)
     TM = ACMap(EL, T, ER)
 
-    function ACMap_pushback(∂TM)
+    function ACMap_pushback(_∂TM)
+        ∂TM = unthunk(_∂TM)
         ∂EL = zero(EL)
         ∂T = zero(T)
         ∂ER = zero(ER)

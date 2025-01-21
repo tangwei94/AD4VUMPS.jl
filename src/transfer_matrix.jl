@@ -38,7 +38,7 @@ function right_env_backward(TM::AbstractLinearMap, λ::Number, vr::AbstractTenso
 end
 
 function left_env_backward(TM::AbstractLinearMap, λ::Number, vl::AbstractTensorMap, ∂vl::AbstractTensorMap)
-    init = similar(vl)
+    init = similar(vl); 
     randomize!(init); 
     init = init - dot(vl, init) * vl # the subtracted part lives in the null space of TM - λ*I
 
@@ -57,7 +57,8 @@ function ChainRulesCore.rrule(::typeof(right_env), TM::AbstractLinearMap)
     λrs, vrs, _ = eigsolve(v -> right_transfer(TM, v), init, 1, :LM)
     λr, vr = λrs[1], vrs[1]
 
-    function right_env_pushback(∂vr)
+    function right_env_pushback(_∂vr)
+        ∂vr = unthunk(_∂vr)
         ξr = right_env_backward(TM, λr, vr, ∂vr)
         return NoTangent(), LinearMapBackward([-ξr], [vr])
     end
@@ -69,7 +70,8 @@ function ChainRulesCore.rrule(::typeof(left_env), TM::AbstractLinearMap)
     λls, vls, _ = eigsolve(v -> left_transfer(TM, v), init, 1, :LM)
     λl, vl = λls[1], vls[1]
    
-    function left_env_pushback(∂vl)
+    function left_env_pushback(_∂vl)
+        ∂vl = unthunk(_∂vl)
         ξl = left_env_backward(TM, λl, vl, ∂vl)
         return NoTangent(), LinearMapBackward([vl], [-ξl])
     end

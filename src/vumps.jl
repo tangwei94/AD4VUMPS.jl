@@ -1,4 +1,5 @@
 function mps_update(AC::MPSTensor, C::MPSBondTensor)
+
     UAC_l, PAC_l = leftorth(AC; alg = QRpos())
     UC_l, PC_l = leftorth(C; alg = QRpos())
 
@@ -210,8 +211,10 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         return NoTangent(), ∂T
     end
 
-    function vumps_pushback_geometric_series(∂ALAR)
-        (∂AL, ∂AR) = ∂ALAR
+    function vumps_pushback_geometric_series(_∂ALAR)
+        (_∂AL, _∂AR) = _∂ALAR
+        ∂AL, ∂AR = unthunk(_∂AL), unthunk(_∂AR)
+
         ∂AL = project_dAL(∂AL, AL, :Stiefel)
         ∂AR = project_dAR(∂AR, AR, :Stiefel)
 
