@@ -250,6 +250,6 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback_geometric_series
+    return (AL, AR), vumps_pushback_arnoldi
 end
 
