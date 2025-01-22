@@ -146,6 +146,12 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
 
         ∂AL = project_dAL(∂AL, AL, :Stiefel)
         ∂AR = project_dAR(∂AR, AR, :Stiefel)
+
+        #FIXME. temperory fix. originally it would fail if ∂AL or ∂AR is ZeroTangent. 
+        # since the ad rule for tensoroperations does not accept ZeroTangent.
+        ∂AL0 = isa(∂AL, ZeroTangent) ? zero(AL) : ∂AL
+        ∂AR0 = isa(∂AR, ZeroTangent) ? zero(AR) : ∂AR
+        Y1 = (∂AL0, ∂AR0, 1.0 + 0.0im)
         
         _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
 
@@ -162,23 +168,18 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
-        X1 = vjp_ALAR_ALAR([∂AL, ∂AR]) 
-        Y1 = (X1[1], X1[2], 1.0 + 0.0im)
-        
         function f_map(Y)
             Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) 
-            return (Yx[1] + Y[3] * X1[1], Yx[2] + Y[3] * X1[2], Y[3])
+            return (Yx[1] + Y[3] * Y1[1], Yx[2] + Y[3] * Y1[2], Y[3])
         end
         vals, vecs, info = realeigsolve(f_map, Y1, 1, :LM, Arnoldi(; tol=tol))
-        printstyled("vumps_pushback: Arnoldi leading eigenvalue: $(vals[1]) \n"; color=:light_yellow)
+        printstyled("vumps_pushback: Arnoldi leading eigenvalues: $(vals) \n"; color=:light_yellow)
         printstyled("vumps_pushback: Arnoldi info: $(info) \n"; color=:light_yellow)
         if norm(vecs[1][3]) < 1e-8
             @error "vumps_pushback: Arnoldi backward failed: λ = $(vecs[1][3])"
         end
         
         Xsum = [vecs[1][1] / vecs[1][3] , vecs[1][2] / vecs[1][3]]
-        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
-        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
         ∂T = vjp_ALAR_T(Xsum)
         return NoTangent(), ∂T 
     end
@@ -238,17 +239,17 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         end
         vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
-        X1 = vjp_ALAR_ALAR([∂AL, ∂AR])
-        f_map(X) = vjp_ALAR_ALAR(X) + X1
-        Xsum = iterative_solver(f_map, X1, DIIS_extrapolation_alg(; tol = tol * 10))
+        ∂AL0 = isa(∂AL, ZeroTangent) ? zero(AL) : ∂AL
+        ∂AR0 = isa(∂AR, ZeroTangent) ? zero(AR) : ∂AR
+        X0 = [∂AL0, ∂AR0]
 
-        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
-        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
+        f_map(X) = vjp_ALAR_ALAR(X) + X0
+        Xsum = iterative_solver(f_map, X0, DIIS_extrapolation_alg(; tol = tol * 10))
 
         ∂T = vjp_ALAR_T(Xsum)
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback_arnoldi
+    return (AL, AR), vumps_pushback_geometric_series
 end
 
