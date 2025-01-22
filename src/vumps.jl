@@ -101,8 +101,10 @@ end
 function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e-12, kwargs...)
     AL, AR = vumps(T; maxiter=maxiter, tol=tol, kwargs...)
 
-    function vumps_pushback_geometric_series_grassmann(∂ALAR) # does not work
-        (∂AL, ∂AR) = ∂ALAR
+    function vumps_pushback_geometric_series_grassmann(_∂ALAR) # does not work
+        (_∂AL, _∂AR) = _∂ALAR
+        ∂AL, ∂AR = unthunk(_∂AL), unthunk(_∂AR)
+
         ∂AL = project_dAL(∂AL, AL, :Grassmann)
         ∂AR = project_dAR(∂AR, AR, :Grassmann)
         _, vumps_iteration_vjp = pullback(ordinary_vumps_iteration, AL, AR, T)
@@ -138,8 +140,10 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         return NoTangent(), ∂T
     end
 
-    function vumps_pushback_arnoldi(∂ALAR)
-        (∂AL, ∂AR) = ∂ALAR
+    function vumps_pushback_arnoldi(_∂ALAR)
+        (_∂AL, _∂AR) = _∂ALAR
+        ∂AL, ∂AR = unthunk(_∂AL), unthunk(_∂AR)
+
         ∂AL = project_dAL(∂AL, AL, :Stiefel)
         ∂AR = project_dAR(∂AR, AR, :Stiefel)
         
@@ -165,7 +169,7 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
             Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) 
             return (Yx[1] + Y[3] * X1[1], Yx[2] + Y[3] * X1[2], Y[3])
         end
-        vals, vecs, info = eigsolve(f_map, Y1, 1, :LM)
+        vals, vecs, info = realeigsolve(f_map, Y1, 1, :LM, Arnoldi())
         printstyled("vumps_pushback: Arnoldi leading eigenvalue: $(vals[1]) \n"; color=:light_yellow)
         printstyled("vumps_pushback: Arnoldi info: $(info) \n"; color=:light_yellow)
         if norm(vecs[1][3]) < 1e-8
@@ -179,37 +183,39 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         return NoTangent(), ∂T 
     end
 
-    function vumps_pushback_linsolve(∂ALAR)
-        (∂AL, ∂AR) = ∂ALAR
-        ∂AL = project_dAL(∂AL, AL, :Stiefel)
-        ∂AR = project_dAR(∂AR, AR, :Stiefel)
-        
-        _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
+    #function vumps_pushback_linsolve(_∂ALAR)
+    #    (_∂AL, _∂AR) = _∂ALAR
+    #    ∂AL, ∂AR = unthunk(_∂AL), unthunk(_∂AR)
 
-        function vjp_ALAR_ALAR(X)
-            Xi1 = project_dAL(X[1], AL, :Stiefel)
-            Xi2 = project_dAR(X[2], AR, :Stiefel)
+    #    ∂AL = project_dAL(∂AL, AL, :Stiefel)
+    #    ∂AR = project_dAR(∂AR, AR, :Stiefel)
+    #    
+    #    _, vumps_iteration_vjp = pullback(gauge_fixed_vumps_iteration, AL, AR, T)
 
-            Xo = vumps_iteration_vjp((Xi1, Xi2))
+    #    function vjp_ALAR_ALAR(X)
+    #        Xi1 = project_dAL(X[1], AL, :Stiefel)
+    #        Xi2 = project_dAR(X[2], AR, :Stiefel)
 
-            Xo1 = project_dAL(Xo[1], AL, :Stiefel)
-            Xo2 = project_dAR(Xo[2], AR, :Stiefel)
+    #        Xo = vumps_iteration_vjp((Xi1, Xi2))
 
-            return [Xo1, Xo2]
-        end
-        vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
+    #        Xo1 = project_dAL(Xo[1], AL, :Stiefel)
+    #        Xo2 = project_dAR(Xo[2], AR, :Stiefel)
 
-        X1 = vjp_ALAR_ALAR([∂AL, ∂AR])
+    #        return [Xo1, Xo2]
+    #    end
+    #    vjp_ALAR_T(X) = vumps_iteration_vjp((X[1], X[2]))[3]
 
-        f_map(X) = X - vjp_ALAR_ALAR(X)
-        Xsum, info = linsolve(f_map, X1, X1; tol= tol) 
-        println("vumps_pushback: linsolve info: ", info)
-        (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
-        (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
-        ∂T = vjp_ALAR_T(Xsum)
-        
-        return NoTangent(), ∂T
-    end
+    #    X1 = vjp_ALAR_ALAR([∂AL, ∂AR])
+
+    #    f_map(X) = X - vjp_ALAR_ALAR(X)
+    #    Xsum, info = reallinsolve(f_map, X1, X1; tol= tol) 
+    #    println("vumps_pushback: linsolve info: ", info)
+    #    (!isnothing(∂AL)) && (Xsum[1] += ∂AL)
+    #    (!isnothing(∂AR)) && (Xsum[2] += ∂AR)
+    #    ∂T = vjp_ALAR_T(Xsum)
+    #    
+    #    return NoTangent(), ∂T
+    #end
 
     function vumps_pushback_geometric_series(_∂ALAR)
         (_∂AL, _∂AR) = _∂ALAR
@@ -243,6 +249,6 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
         
         return NoTangent(), ∂T
     end
-    return (AL, AR), vumps_pushback_geometric_series
+    return (AL, AR), vumps_pushback_arnoldi
 end
 

@@ -14,7 +14,7 @@
         AL, AR, _ = mps_update(AC1, C)
         return norm(tr(QAC' * AL)) + norm(tr(QAC * AR'))
     end
-  
+
     test_ADgrad(_F1, C)
     test_ADgrad(_F2, AC)
 end
@@ -113,7 +113,7 @@ end
     test_ADgrad(_F2, T; sX=sX, num=2)
 end
 
-@testset "test ad of vumps" for ix in 1:1
+@testset "test ad of vumps" for ix in 1:2
     T = tensor_square_ising(asinh(1) / 2)
     A = rand(ComplexF64, ℂ^4*ℂ^2, ℂ^4) 
 
