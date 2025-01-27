@@ -172,7 +172,7 @@ function ChainRulesCore.rrule(::typeof(vumps), T::MPOTensor; maxiter=250, tol=1e
             Yx = vjp_ALAR_ALAR([Y[1], Y[2]]) 
             return (Yx[1] + Y[3] * Y1[1], Yx[2] + Y[3] * Y1[2], Y[3])
         end
-        vals, vecs, info = realeigsolve(f_map, Y1, 1, :LM, Arnoldi(; tol=0.1*tol))
+        vals, vecs, info = realeigsolve(f_map, Y1, 1, :LM, Arnoldi(; tol=0.01*tol))
         printstyled("vumps_pushback: Arnoldi leading eigenvalues: $(vals) \n"; color=:light_yellow)
         printstyled("vumps_pushback: Arnoldi info: $(info) \n"; color=:light_yellow)
         if norm(vecs[1][3]) < 1e-8
