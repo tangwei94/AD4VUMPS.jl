@@ -19,12 +19,12 @@ end
     AL, AR = vumps(T; A=A, verbosity=0)
     O = tensor_square_ising_O(asinh(1) / 2 / 2)
 
-    AL1, AR1 = AD4VUMPS.gauge_fixed_vumps_iteration(AL, AR, T)
+    AL1, AR1 = AD4vumps.gauge_fixed_vumps_iteration(AL, AR, T)
     @test norm(AL1 - AL) < 1e-9
     @test norm(AR1 - AR) < 1e-9
 
     function _F1(T)
-        AL1, AR1 = AD4VUMPS.gauge_fixed_vumps_iteration(AL, AR, T)
+        AL1, AR1 = AD4vumps.gauge_fixed_vumps_iteration(AL, AR, T)
         TM = MPSMPOMPSTransferMatrix(AL1, T, AL1)
         EL = left_env(TM)
         ER = right_env(TM)

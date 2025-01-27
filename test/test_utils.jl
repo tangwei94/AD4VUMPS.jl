@@ -4,7 +4,7 @@ using ChainRules, ChainRulesCore, Zygote
 #using Debugger
 
 using Revise
-using AD4VUMPS
+using AD4vumps
 
 function test_ADgrad(_F, X; α = 1e-4, tol = 1e-6, sX = nothing, num = 10)
 

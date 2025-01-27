@@ -1,4 +1,4 @@
-module AD4VUMPS
+module AD4vumps
 
 __precompile__(true)
 

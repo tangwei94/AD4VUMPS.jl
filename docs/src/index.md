@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = AD4VUMPS
+CurrentModule = AD4vumps
 ```
 
-# AD4VUMPS
+# AD4vumps
 
-Documentation for [AD4VUMPS](https://github.com/tangwei94/AD4VUMPS.jl).
+Documentation for [AD4vumps](https://github.com/tangwei94/AD4vumps.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [AD4VUMPS]
+Modules = [AD4vumps]
 ```
