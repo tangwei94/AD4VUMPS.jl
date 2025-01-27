@@ -5,4 +5,4 @@
 [![Build Status](https://github.com/tangwei94/AD4VUMPS.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/tangwei94/AD4VUMPS.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/tangwei94/AD4VUMPS.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/tangwei94/AD4VUMPS.jl)
 
-A minimal implementation of automatic differentiation for VUMPS and VOMPS (to do)
+A minimal implementation of automatic differentiation for VUMPS 
