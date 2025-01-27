@@ -110,7 +110,7 @@ end
     end
    
     sX = random_real_symmetric_tensor(2)
-    test_ADgrad(_F2, T; sX=sX, num=2)
+    test_ADgrad(_F2, T; sX=sX, num=2, α=1e-4, tol=1e-4)
 end
 
 @testset "test ad of vumps" for ix in 1:2
@@ -131,5 +131,5 @@ end
     end
    
     sX = random_real_symmetric_tensor(2)
-    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=1e-3)
+    test_ADgrad(_F1, T; sX=sX, num=2, α=1e-4, tol=1e-4)
 end
